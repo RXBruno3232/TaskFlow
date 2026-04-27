@@ -444,6 +444,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     <button class="nav-btn" id="nav-interno" onclick="showSection('interno')">🏠 Uso Interno</button>
     <button class="nav-btn" id="nav-itens" onclick="showSection('itens')">🛒 Solicitação de Itens</button>
     <button class="nav-btn" id="nav-relatorios" onclick="showSection('relatorios')">📄 Relatórios</button>
+    <button class="nav-btn" id="nav-semrevisao" onclick="showSection('semrevisao')">🚫 Sem Revisão <span class="nav-badge" id="nav-badge-semrevisao" style="display:none;background:#8B5CF6;">0</span></button>
   </div>
 
   <!-- FILTER BAR -->
@@ -474,6 +475,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
       <option value="">Ordenar padrão</option>
       <option value="date">Por prazo</option>
       <option value="urgency">Por urgência</option>
+      <option value="days_asc">⏱ Mais antigos primeiro</option>
+      <option value="days_desc">⏱ Mais recentes primeiro</option>
     </select>
     <label class="btn-import" title="Importar CSV">
       📥 Importar
@@ -570,6 +573,14 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
         <tbody id="items-body"></tbody>
       </table>
     </div>
+  </div>
+
+  <!-- SEM REVISÃO -->
+  <div id="view-semrevisao" style="display:none">
+    <div class="section-header">
+      <div class="section-title">🚫 Sem Condição de Revisão</div>
+    </div>
+    <div class="cards-grid" id="semrevisao-grid"></div>
   </div>
 
   <!-- RELATÓRIOS -->
@@ -741,6 +752,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 
   let tasks = {};
   let history = [];
+  let semRevisao = []; // cards marcados sem condição de revisão
   let items = []; // solicitação de itens
   let editId = null, editDay = null, modalDay = null;
   let movingId = null, movingDay = null;
@@ -832,9 +844,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
           tasks = data.tasks || {};
           history = data.history || [];
           items = data.items || [];
+          semRevisao = data.semRevisao || [];
         } else {
           DAYS.forEach(d => { tasks[d] = []; });
-          history = []; items = [];
+          history = []; items = []; semRevisao = [];
         }
         DAYS.forEach(d => { if (!tasks[d]) tasks[d] = []; });
         render();
@@ -842,7 +855,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     } else {
       try {
         const saved = localStorage.getItem('tf_v3');
-        if (saved) { const p = JSON.parse(saved); tasks = p.tasks || {}; history = p.history || []; items = p.items || []; }
+        if (saved) { const p = JSON.parse(saved); tasks = p.tasks || {}; history = p.history || []; items = p.items || []; semRevisao = p.semRevisao || []; }
       } catch(e) {}
       DAYS.forEach(d => { if (!tasks[d]) tasks[d] = []; });
       render();
@@ -850,7 +863,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   }
 
   function persistTasks() {
-    const payload = { tasks, history, items };
+    const payload = { tasks, history, items, semRevisao };
     if (firebaseOk && db) {
       set(ref(db, 'tasks_v3'), payload).then(() => showSync('✓ Sincronizado'));
     } else {
@@ -868,7 +881,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   // ===== SECTIONS =====
   window.showSection = function(section) {
     currentSection = section;
-    const views = ['dashboard','tasks','pedidos','concluidos','cliente','interno','itens','relatorios'];
+    const views = ['dashboard','tasks','pedidos','concluidos','cliente','interno','itens','relatorios','semrevisao'];
     views.forEach(v => {
       document.getElementById('view-' + v).style.display = v === section ? '' : 'none';
       document.getElementById('nav-' + v).classList.toggle('active', v === section);
@@ -906,6 +919,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     if (filterTipo) list = list.filter(t => (t.tipo||'cliente') === filterTipo);
     if (filterSort === 'date') list.sort((a,b) => (a.dateRaw||'9999') < (b.dateRaw||'9999') ? -1 : 1);
     else if (filterSort === 'urgency') list.sort((a,b) => ((b.urgent?2:0)+(b.priority?1:0)) - ((a.urgent?2:0)+(a.priority?1:0)));
+    else if (filterSort === 'days_asc') list.sort((a,b) => (parseInt(b.daysRunning)||0) - (parseInt(a.daysRunning)||0));
+    else if (filterSort === 'days_desc') list.sort((a,b) => (parseInt(a.daysRunning)||0) - (parseInt(b.daysRunning)||0));
     return list;
   }
 
@@ -923,6 +938,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     else if (s === 'interno') renderInterno();
     else if (s === 'itens') renderItems();
     else if (s === 'relatorios') renderRelatorios();
+    else if (s === 'semrevisao') renderSemRevisao();
   }
 
   function updateTopbar() {
@@ -979,6 +995,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     if (late > 0) { bPed.style.display = ''; bPed.textContent = late + ' atr.'; } else bPed.style.display = 'none';
     const bConcl = document.getElementById('nav-badge-concluidos');
     if (concl > 0) { bConcl.style.display = ''; bConcl.textContent = concl; } else bConcl.style.display = 'none';
+    const bSemRev = document.getElementById('nav-badge-semrevisao');
+    if (semRevisao.length > 0) { bSemRev.style.display = ''; bSemRev.textContent = semRevisao.length; } else bSemRev.style.display = 'none';
   }
 
   // ===== DASHBOARD =====
@@ -1177,6 +1195,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
       ${!isDone ? `<button class="tc-act" onclick="openEdit('${day}','${task.id}');event.stopPropagation();">✏️ Editar</button>` : ''}
       ${!isDone ? `<button class="tc-act" onclick="openMove('${day}','${task.id}');event.stopPropagation();">↕ Mover</button>` : ''}
       ${!isDone ? `<button class="tc-act" onclick="openCardDetail(getTasks('${day}','${task.id}'));event.stopPropagation();">👁 Ver</button>` : ''}
+      ${!isDone ? `<button class="tc-act" style="color:#8B5CF6;border-color:rgba(139,92,246,0.3);" onclick="marcarSemRevisao('${day}','${task.id}');event.stopPropagation();" title="Sem condição de revisão">🚫 Sem Rev.</button>` : ''}
       <button class="tc-act del-act" onclick="deleteTask('${day}','${task.id}');event.stopPropagation();">✕</button>
     </div>`;
 
@@ -1198,8 +1217,18 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     `;
 
     // Drag
-    card.addEventListener('dragstart', () => { card.classList.add('dragging'); dragTask = {id: task.id, day}; });
-    card.addEventListener('dragend', () => card.classList.remove('dragging'));
+    card.addEventListener('dragstart', () => {
+      card.classList.add('dragging');
+      dragTask = {id: task.id, day};
+      // Save scroll positions of all columns
+      dragScrollPositions = {};
+      document.querySelectorAll('.trello-col-body').forEach(b => {
+        dragScrollPositions[b.id] = b.scrollTop;
+      });
+    });
+    card.addEventListener('dragend', () => {
+      card.classList.remove('dragging');
+    });
 
     return card;
   }
@@ -1219,6 +1248,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   // ===== DRAG & DROP (position-aware) =====
   let dragTask = null;
   let dragPlaceholder = null;
+  let dragScrollPositions = {};
 
   function createPlaceholder() {
     const ph = document.createElement('div');
@@ -1287,7 +1317,16 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
       tasks[day] = [...openInDest, ...doneInDest];
 
       persistTasks();
-      if (!firebaseOk) renderTrelloBoard();
+      // Restore scroll positions after render
+      const scrollsToRestore = {...dragScrollPositions};
+      const restoreScroll = () => {
+        Object.entries(scrollsToRestore).forEach(([id, top]) => {
+          const el = document.getElementById(id);
+          if (el) el.scrollTop = top;
+        });
+      };
+      if (!firebaseOk) { renderTrelloBoard(); restoreScroll(); }
+      else { setTimeout(restoreScroll, 120); }
       dragTask = null;
     });
   }
@@ -1308,6 +1347,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     if (filterTipo) allTasks = allTasks.filter(t => (t.tipo||'cliente') === filterTipo);
     if (filterSort === 'date') allTasks.sort((a,b) => (a.dateRaw||'9999') < (b.dateRaw||'9999') ? -1 : 1);
     else if (filterSort === 'urgency') allTasks.sort((a,b) => ((b.urgent?2:0)+(b.priority?1:0)) - ((a.urgent?2:0)+(a.priority?1:0)));
+    else if (filterSort === 'days_asc') allTasks.sort((a,b) => (parseInt(b.daysRunning)||0) - (parseInt(a.daysRunning)||0));
+    else if (filterSort === 'days_desc') allTasks.sort((a,b) => (parseInt(a.daysRunning)||0) - (parseInt(b.daysRunning)||0));
 
     if (allTasks.length === 0) {
       grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;padding:32px 0;"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="15" x2="12" y2="15"/></svg>Nenhum pedido em aberto</div>';
@@ -1344,6 +1385,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
       <div class="oc-actions">
         <button class="tc-act done-act" onclick="toggleDone('${day}','${t.id}');renderPedidos();">✓ Concluir</button>
         <button class="tc-act" onclick="openEdit('${day}','${t.id}')">✏️ Editar</button>
+        <button class="tc-act" style="color:#8B5CF6;border-color:rgba(139,92,246,0.3);" onclick="marcarSemRevisao('${day}','${t.id}')" title="Sem condição de revisão">🚫 Sem Rev.</button>
         <button class="tc-act del-act" onclick="deleteTask('${day}','${t.id}')">✕ Excluir</button>
       </div>
     </div>`;
@@ -1705,6 +1747,83 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     }
     persistTasks(); if (!firebaseOk) render();
   };
+
+  // ===== SEM REVISÃO =====
+  window.marcarSemRevisao = function(day, id) {
+    const task = (tasks[day]||[]).find(t => t.id === id);
+    if (!task) return;
+    if (!confirm(`Marcar "${task.title}" como Sem Condição de Revisão?`)) return;
+    // Remove from tasks
+    tasks[day] = (tasks[day]||[]).filter(t => t.id !== id);
+    // Add to semRevisao with metadata
+    const now = new Date();
+    const markedAt = now.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'}) + ' ' + now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    if (!semRevisao) semRevisao = [];
+    semRevisao.push({...task, _day: day, markedAt});
+    persistTasks();
+    if (!firebaseOk) render();
+  };
+
+  window.retornarParaTarefas = function(id) {
+    const idx = (semRevisao||[]).findIndex(t => t.id === id);
+    if (idx < 0) return;
+    const task = semRevisao[idx];
+    const day = task._day || DAYS[0];
+    // Remove extra fields
+    const { _day, markedAt, ...cleanTask } = task;
+    cleanTask.done = false;
+    if (!tasks[day]) tasks[day] = [];
+    tasks[day].push(cleanTask);
+    semRevisao.splice(idx, 1);
+    persistTasks();
+    if (!firebaseOk) render();
+  };
+
+  window.deleteSemRevisao = function(id) {
+    if (!confirm('Excluir este card definitivamente?')) return;
+    semRevisao = (semRevisao||[]).filter(t => t.id !== id);
+    persistTasks();
+    renderSemRevisao();
+    updateNavBadges();
+  };
+
+  function renderSemRevisao() {
+    const grid = document.getElementById('semrevisao-grid');
+    if (!grid) return;
+    if (!semRevisao || semRevisao.length === 0) {
+      grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;padding:32px 0;"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>Nenhum card sem condição de revisão</div>';
+      return;
+    }
+    grid.innerHTML = semRevisao.map(t => {
+      const avCls = {JOÃO:'av-joao',GABRIEL:'av-gabriel',GUSTAVO:'av-gustavo',EXTERNO:'av-externo'};
+      const av = avCls[(t.assignee||'').toUpperCase()] || 'av-gen';
+      const tipoTag = `<span class="tc-badge badge-tipo ${t.tipo === 'interno' ? 'interno' : ''}">${t.tipo === 'interno' ? '🏠 Interno' : '👤 Cliente'}</span>`;
+      const obsHighlight = t.obs ? `<div class="oc-obs">${highlightKeywords(esc(t.obs))}</div>` : '';
+      return `<div class="order-card" style="border-left:3px solid #8B5CF6;">
+        <div class="oc-top">
+          <div class="oc-title">🚫 ${esc(t.title)}</div>
+          ${t.assignee ? `<div style="display:flex;align-items:center;gap:4px;flex-shrink:0;"><div class="tc-av ${av}" style="width:20px;height:20px;font-size:8px;">${getInitials(t.assignee)}</div><span style="font-size:11px;font-weight:700;color:var(--text2);">${esc(t.assignee)}</span></div>` : ''}
+        </div>
+        <div class="oc-badges">
+          <span class="tc-badge" style="background:rgba(139,92,246,0.12);color:#A78BFA;border:1px solid rgba(139,92,246,0.3);">SEM REVISÃO</span>
+          ${tipoTag}
+          ${t.date ? `<span class="tc-badge badge-date">📅 ${t.date}</span>` : ''}
+        </div>
+        <div class="oc-meta">
+          ${t.order ? `<div class="oc-field">Pedido <span>${esc(t.order)}</span></div>` : ''}
+          ${t.client ? `<div class="oc-field">Cliente <span>${esc(t.client)}</span></div>` : ''}
+          ${t.equipment ? `<div class="oc-field">Equipamento <span>${esc(t.equipment)}</span></div>` : ''}
+          ${t._day ? `<div class="oc-field">Dia original <span>${esc(t._day)}</span></div>` : ''}
+          <div class="oc-field" style="color:var(--text3);">Marcado em <span style="color:#A78BFA;">${t.markedAt||'—'}</span></div>
+        </div>
+        ${obsHighlight}
+        <div class="oc-actions">
+          <button class="tc-act" style="color:var(--success);border-color:var(--success-border);" onclick="retornarParaTarefas('${t.id}')">↩ Retornar às Tarefas</button>
+          <button class="tc-act del-act" onclick="deleteSemRevisao('${t.id}')">✕ Excluir</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
 
   window.changeQty = function(day, id, delta) {
     const t = (tasks[day]||[]).find(t => t.id === id);
