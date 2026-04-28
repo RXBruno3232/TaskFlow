@@ -215,6 +215,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .badge-urgent{background:var(--urgent-dim);color:var(--urgent);border:1px solid var(--urgent-border);}
 .badge-priority{background:var(--priority-dim);color:var(--priority);border:1px solid var(--priority-border);}
 .badge-normal{background:var(--surface3);color:var(--text3);border:1px solid var(--border2);}
+.task-card.bulk-selected{outline:2px solid var(--accent);outline-offset:2px;background:var(--accent-dim)!important;}
+.bulk-select-dot{width:16px;height:16px;border-radius:50%;border:2px solid var(--border2);background:var(--surface2);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:all .15s;}
+.bulk-select-dot.selected{border-color:var(--accent);background:var(--accent);}
+.bulk-select-dot svg{width:9px;height:9px;stroke:white;fill:none;stroke-width:3;}
 .badge-done{background:var(--success-dim);color:var(--success);border:1px solid var(--success-border);}
 .badge-date{background:var(--surface3);color:var(--text2);border:1px solid var(--border2);}
 .badge-overdue{background:var(--urgent-dim);color:var(--urgent);border:1px solid var(--urgent-border);}
@@ -502,6 +506,11 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 
   <!-- TAREFAS (Trello) -->
   <div id="view-tasks" style="display:none">
+    <div style="display:flex;align-items:center;justify-content:flex-end;padding:0 2px 8px;">
+      <button id="bulk-toggle-btn" onclick="toggleBulkMode()" style="padding:5px 13px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);font-family:var(--font);font-size:11px;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:5px;transition:all .15s;" onmouseenter="this.style.borderColor='var(--accent)';this.style.color='var(--accent2)'" onmouseleave="this.style.borderColor='';this.style.color=''">
+        ☑️ Seleção múltipla
+      </button>
+    </div>
     <div class="trello-board" id="trello-board"></div>
   </div>
 
@@ -742,6 +751,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 
   const SENHA = "daas2026";
   const DAYS = ['Segunda','Terça','Quarta','Quinta','Sexta'];
+  window.DAYS = DAYS;
   const ASSIGNEES = ['JOÃO','GABRIEL','GUSTAVO','EXTERNO'];
   // Keywords to highlight in OBS Comercial
   const OBS_KEYWORDS = [
@@ -1136,9 +1146,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     // Priority badge
     let priTag = '';
     if (!isDone) {
-      if (task.urgent) priTag = '<span class="tc-badge badge-urgent">URGENTE</span>';
+      if (task.urgent) priTag = `<span class="tc-badge badge-urgent" style="cursor:pointer;" title="Clique para remover urgência" onclick="toggleUrgentBadge('${day}','${task.id}');event.stopPropagation();">🔴 URGENTE</span>`;
       else if (task.priority) priTag = '<span class="tc-badge badge-priority">PRIORIDADE</span>';
-      else priTag = '<span class="tc-badge badge-normal">NORMAL</span>';
+      else priTag = `<span class="tc-badge badge-normal" style="cursor:pointer;transition:all .15s;" title="Clique para marcar como URGENTE" onmouseenter="this.style.background='var(--urgent-dim)';this.style.color='var(--urgent)';this.style.borderColor='var(--urgent-border)'" onmouseleave="this.style.background='';this.style.color='';this.style.borderColor=''" onclick="toggleUrgentBadge('${day}','${task.id}');event.stopPropagation();">⚡ URGÊNCIA</span>`;
     } else priTag = '<span class="tc-badge badge-done">✓ CONCLUÍDA</span>';
 
     const overdueTag = isOverdue(task) && !isDone ? '<span class="tc-badge badge-overdue">⏰ ATRASADA</span>' : '';
@@ -1201,9 +1211,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 
     card.innerHTML = `
       <div class="tc-top">
-        <div class="tc-check ${isDone ? 'checked' : ''}" onclick="toggleDone('${day}','${task.id}');event.stopPropagation();">
+        ${bulkMode && !isDone ? `<div class="bulk-select-dot ${bulkSelected.has(day+'|'+task.id)?'selected':''}" onclick="toggleBulkSelect('${day}','${task.id}');event.stopPropagation();" title="Selecionar card"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>` : `<div class="tc-check ${isDone ? 'checked' : ''}" onclick="toggleDone('${day}','${task.id}');event.stopPropagation();">
           <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-        </div>
+        </div>`}
         <div style="flex:1;min-width:0;">
           <div class="tc-title" style="${isDone ? 'text-decoration:line-through;color:var(--text3)' : ''}">${esc(task.title)}</div>
         </div>
@@ -1824,6 +1834,80 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
       </div>`;
     }).join('');
   }
+
+  // ===== TOGGLE URGÊNCIA (clique no badge) =====
+  window.toggleUrgentBadge = function(day, id) {
+    const t = (tasks[day]||[]).find(t => t.id === id);
+    if (!t) return;
+    t.urgent = !t.urgent;
+    if (t.urgent) t.priority = false;
+    persistTasks();
+    if (!firebaseOk) renderTrelloBoard();
+  };
+
+  // ===== SELEÇÃO MÚLTIPLA E MOVER EM LOTE =====
+  let bulkSelected = new Set(); // Set de "day|id"
+  let bulkMode = false;
+
+  window.toggleBulkMode = function() {
+    bulkMode = !bulkMode;
+    bulkSelected.clear();
+    renderTrelloBoard();
+    updateBulkBar();
+  };
+
+  window.toggleBulkSelect = function(day, id) {
+    const key = day + '|' + id;
+    if (bulkSelected.has(key)) bulkSelected.delete(key);
+    else bulkSelected.add(key);
+    // update visual on card
+    const card = document.querySelector(`[data-task-id="${id}"]`);
+    if (card) card.classList.toggle('bulk-selected', bulkSelected.has(key));
+    updateBulkBar();
+  };
+
+  function updateBulkBar() {
+    let bar = document.getElementById('bulk-bar');
+    if (!bulkMode) { if (bar) bar.style.display = 'none'; return; }
+    if (!bar) {
+      bar = document.createElement('div');
+      bar.id = 'bulk-bar';
+      bar.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:9999;background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:10px 18px;display:flex;align-items:center;gap:10px;box-shadow:var(--shadow-lg);min-width:340px;justify-content:center;';
+      document.body.appendChild(bar);
+    }
+    const count = bulkSelected.size;
+    const daysOpts = (window.DAYS||['SEGUNDA','TERÇA','QUARTA','QUINTA','SEXTA','SÁBADO']).map(d => `<option value="${d}">${d}</option>`).join('');
+    bar.style.display = 'flex';
+    bar.innerHTML = `
+      <span style="font-size:12px;font-weight:800;color:var(--text2);">${count} card${count !== 1 ? 's' : ''} selecionado${count !== 1 ? 's' : ''}</span>
+      <select id="bulk-day-select" style="padding:6px 10px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-family:var(--font);font-size:12px;font-weight:700;">
+        <option value="">Mover para...</option>
+        ${daysOpts}
+      </select>
+      <button style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:white;font-family:var(--font);font-size:12px;font-weight:800;cursor:pointer;" onclick="executeBulkMove()">✓ Mover</button>
+      <button style="padding:6px 12px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);font-family:var(--font);font-size:12px;font-weight:700;cursor:pointer;" onclick="toggleBulkMode()">✕ Cancelar</button>
+    `;
+  }
+
+  window.executeBulkMove = function() {
+    const destDay = document.getElementById('bulk-day-select')?.value;
+    if (!destDay) { alert('Selecione um dia de destino!'); return; }
+    if (bulkSelected.size === 0) return;
+    bulkSelected.forEach(key => {
+      const [day, id] = key.split('|');
+      if (day === destDay) return;
+      const idx = (tasks[day]||[]).findIndex(t => t.id === id);
+      if (idx < 0) return;
+      const [task] = (tasks[day]||[]).splice(idx, 1);
+      if (!tasks[destDay]) tasks[destDay] = [];
+      tasks[destDay].push(task);
+    });
+    bulkSelected.clear();
+    bulkMode = false;
+    persistTasks();
+    if (!firebaseOk) renderTrelloBoard();
+    updateBulkBar();
+  };
 
   window.changeQty = function(day, id, delta) {
     const t = (tasks[day]||[]).find(t => t.id === id);
