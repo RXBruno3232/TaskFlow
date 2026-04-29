@@ -223,7 +223,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .badge-date{background:var(--surface3);color:var(--text2);border:1px solid var(--border2);}
 .badge-overdue{background:var(--urgent-dim);color:var(--urgent);border:1px solid var(--urgent-border);}
 .badge-tipo{background:rgba(91,91,214,0.12);color:var(--accent2);border:1px solid rgba(91,91,214,0.25);}
-.badge-tipo.interno{background:rgba(107,114,128,0.12);color:var(--text2);border:1px solid rgba(107,114,128,0.25);}
+.badge-tipo.interno{background:rgba(245,158,11,0.13);color:#F59E0B;border:1px solid rgba(245,158,11,0.32);}
 
 .tc-assignee{display:flex;align-items:center;gap:5px;margin-bottom:4px;}
 .tc-av{width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:6px;font-weight:800;color:white;flex-shrink:0;}
@@ -391,6 +391,49 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 /* Import btn */
 .btn-import{padding:5px 11px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:var(--surface);color:var(--text2);font-family:var(--font);font-size:11px;font-weight:700;cursor:pointer;transition:all .12s;display:inline-flex;align-items:center;gap:4px;}
 .btn-import:hover{background:var(--surface2);}
+
+/* ===== FOCUS DAY MODE ===== */
+#focus-overlay{position:fixed;inset:0;z-index:2000;background:rgba(8,9,18,0.85);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);display:none;align-items:flex-start;justify-content:center;opacity:0;transition:opacity .25s cubic-bezier(.22,1,.36,1);}
+#focus-overlay.open{display:flex;}
+#focus-overlay.visible{opacity:1;}
+.focus-panel{background:var(--bg2,var(--surface));display:flex;flex-direction:column;height:100vh;width:100%;max-width:900px;box-shadow:0 0 100px rgba(0,0,0,0.7);animation:focusIn .3s cubic-bezier(.22,1,.36,1);}
+@keyframes focusIn{from{transform:translateY(28px);opacity:0}to{transform:translateY(0);opacity:1}}
+.focus-header{padding:20px 26px 14px;border-bottom:1px solid var(--border);background:var(--surface2);flex-shrink:0;}
+.focus-header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.focus-day-name{font-size:28px;font-weight:900;letter-spacing:-.6px;display:flex;align-items:center;gap:10px;}
+.focus-close-btn{padding:7px 16px;border-radius:8px;border:1px solid var(--border2);background:var(--surface3);color:var(--text2);font-family:var(--font);font-size:12px;font-weight:800;cursor:pointer;transition:all .14s;}
+.focus-close-btn:hover{border-color:var(--urgent-border);color:var(--urgent);}
+.focus-stats-row{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:13px;}
+.fstat{padding:4px 12px;border-radius:20px;font-size:11px;font-weight:800;border:1px solid var(--border2);background:var(--surface3);color:var(--text2);}
+.fstat.urg{background:var(--urgent-dim);border-color:var(--urgent-border);color:var(--urgent);}
+.fstat.done{background:var(--success-dim);border-color:var(--success-border);color:var(--success);}
+.fstat.pri{background:rgba(245,158,11,0.12);border-color:rgba(245,158,11,0.3);color:#F59E0B;}
+.focus-prog-bar{height:5px;border-radius:3px;background:var(--surface3);overflow:hidden;}
+.focus-prog-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--accent),#10B981);transition:width .5s ease;}
+.focus-filters{display:flex;gap:6px;padding:10px 26px;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0;flex-wrap:wrap;align-items:center;}
+.ffbtn{padding:5px 13px;border-radius:20px;border:1px solid var(--border2);background:transparent;color:var(--text3);font-family:var(--font);font-size:11px;font-weight:700;cursor:pointer;transition:all .13s;}
+.ffbtn:hover{background:var(--accent-dim);border-color:rgba(91,91,214,0.35);color:var(--accent2);}
+.ffbtn.fa{background:var(--accent-dim);border-color:rgba(91,91,214,0.4);color:var(--accent2);}
+.ffbtn.fa-urg{background:var(--urgent-dim);border-color:var(--urgent-border);color:var(--urgent);}
+.ffbtn.fa-done{background:var(--success-dim);border-color:var(--success-border);color:var(--success);}
+.focus-search{padding:5px 13px;border-radius:20px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-family:var(--font);font-size:11px;outline:none;min-width:150px;transition:border .14s;margin-left:auto;}
+.focus-search:focus{border-color:var(--accent);}
+.focus-body{flex:1;overflow-y:auto;padding:18px 26px 30px;display:flex;flex-direction:column;gap:10px;}
+.focus-section-lbl{font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);padding:6px 0 2px;border-top:1px solid var(--border);margin-top:4px;}
+.focus-section-lbl:first-child{border-top:none;margin-top:0;}
+.fcard{background:var(--surface);border:1px solid var(--border2);border-radius:12px;padding:15px 17px;transition:border-color .13s,transform .1s,box-shadow .12s;position:relative;}
+.fcard:hover{border-color:var(--border3);transform:translateY(-1px);box-shadow:0 5px 22px rgba(0,0,0,0.32);}
+.fcard.fc-urg{border-left:3px solid var(--urgent);}
+.fcard.fc-pri{border-left:3px solid #F59E0B;}
+.fcard.fc-done{opacity:.58;}
+.fcard-title{font-size:14px;font-weight:800;color:var(--text);margin-bottom:7px;line-height:1.4;}
+.fcard-title.stk{text-decoration:line-through;color:var(--text3);}
+.fcard-badges{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;}
+.fcard-meta{display:flex;flex-wrap:wrap;gap:10px;font-size:11px;color:var(--text3);margin-bottom:8px;}
+.fcard-meta span b{color:var(--text2);font-weight:700;}
+.fcard-obs{font-size:11px;color:var(--text2);background:var(--surface2);border-radius:8px;padding:8px 11px;border-left:2px solid var(--border2);line-height:1.55;margin-bottom:9px;}
+.fcard-actions{display:flex;gap:6px;flex-wrap:wrap;}
+.focus-empty{text-align:center;padding:60px 0;color:var(--text3);font-size:13px;font-weight:600;}
 </style>
 </head>
 <body>
@@ -499,6 +542,13 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
       <div class="dash-card red"><div class="dash-icon">🔴</div><div class="dash-label">Urgentes</div><div class="dash-value red" id="d-urg">0</div><div class="dash-sub">atenção imediata</div></div>
       <div class="dash-card orange"><div class="dash-icon">⏰</div><div class="dash-label">Atrasadas</div><div class="dash-value orange" id="d-late">0</div><div class="dash-sub">prazo expirado</div></div>
       <div class="dash-card purple"><div class="dash-icon">🛒</div><div class="dash-label">Itens Pendentes</div><div class="dash-value purple" id="d-items">0</div><div class="dash-sub">a comprar/baixar</div></div>
+    </div>
+    <div id="meu-dia-banner" style="display:none;margin-bottom:16px;background:linear-gradient(135deg,rgba(91,91,214,0.15),rgba(139,92,246,0.1));border:1px solid rgba(91,91,214,0.3);border-radius:14px;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+      <div>
+        <div style="font-size:13px;font-weight:900;color:var(--accent2);margin-bottom:3px;">🌅 Hoje é <span id="meu-dia-nome"></span></div>
+        <div style="font-size:11px;color:var(--text3);">Você tem <b id="meu-dia-count" style="color:var(--text2);">0</b> tarefas abertas e <b id="meu-dia-urg" style="color:var(--urgent);">0</b> urgentes hoje.</div>
+      </div>
+      <button onclick="openFocusDay(todayDayName())" style="padding:9px 20px;border-radius:10px;border:none;background:linear-gradient(135deg,var(--accent),#8B5CF6);color:white;font-family:var(--font);font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;box-shadow:0 3px 14px rgba(91,91,214,0.35);transition:opacity .14s,transform .1s;" onmouseenter="this.style.opacity='.88';this.style.transform='translateY(-1px)'" onmouseleave="this.style.opacity='1';this.style.transform=''">⚡ Abrir Meu Dia</button>
     </div>
     <div class="dash-section-title">Responsáveis — visão atual</div>
     <div class="assignee-summary" id="assignee-summary"></div>
@@ -1055,6 +1105,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
         </div>
       </div>`;
     }).join('');
+    updateMeuDiaBanner();
   }
 
   // ===== TRELLO BOARD =====
@@ -1098,7 +1149,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
             ${col.label} ${isToday ? '<span style="font-size:9px;background:var(--accent);color:white;padding:1px 5px;border-radius:8px;font-weight:800;">HOJE</span>' : ''}
             <span style="font-size:9px;color:var(--text3);font-family:var(--mono);font-weight:600;">${fmtDate(dateObj)}</span>
           </div>
-          <span class="trello-col-count">${openTasks.length}</span>
+          <div style="display:flex;align-items:center;gap:5px;">
+            <span class="trello-col-count">${openTasks.length}</span>
+            <button title="Modo Foco — ver só ${col.label}" onclick="openFocusDay('${day}')" style="background:none;border:1px solid var(--border2);border-radius:5px;color:var(--text3);font-size:12px;cursor:pointer;padding:1px 6px;line-height:1.4;transition:all .14s;" onmouseenter="this.style.borderColor='var(--accent)';this.style.color='var(--accent2)'" onmouseleave="this.style.borderColor='';this.style.color=''">⛶</button>
+          </div>
         </div>
         <div class="trello-col-body" id="col-body-${day}"></div>
         <div class="trello-col-footer">
@@ -1438,7 +1492,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
             ${t.equipment ? `<div class="oc-field">💻 Equipamento <span>${esc(t.equipment)}</span></div>` : ''}
             ${t.doneAt ? `<div class="oc-field" style="color:var(--success)">✅ Concluída <span style="color:var(--success)">${t.doneAt}</span></div>` : ''}
           </div>
+          ${t.obs ? `<div style="margin-top:7px;padding-top:7px;border-top:1px solid var(--border);"><div style="font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Obs. Comercial</div><div style="font-size:11px;color:var(--text2);line-height:1.5;">${highlightKeywords(esc(t.obs))}</div></div>` : ''}
           <div class="oc-actions">
+            <button class="tc-act" onclick="openCardDetail(getTaskFromHistory('${t.id}','${t._day}'))">👁 Ver</button>
             <button class="tc-act" onclick="toggleDone('${t._day}','${t.id}');renderConcluidos();renderHistory();">↩ Reabrir</button>
             <button class="tc-act del-act" onclick="deleteTask('${t._day}','${t.id}')">✕</button>
           </div>
@@ -1505,34 +1561,60 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
       body.innerHTML = `<tr><td colspan="7"><div class="empty-history">Nenhum item solicitado ainda.</div></td></tr>`;
       return;
     }
-    const pendItems = [...items].sort((a,b) => {
+
+    const sortFn = (a,b) => {
       const p = x => x.flag === 'urgent' ? 2 : x.flag === 'priority' ? 1 : 0;
       return p(b) - p(a);
-    });
-    body.innerHTML = pendItems.map(item => {
+    };
+
+    const pending = [...items].filter(i => (i.status||'pendente') === 'pendente').sort(sortFn);
+    const baixados = [...items].filter(i => i.status === 'comprado').sort(sortFn);
+    const cancelados = [...items].filter(i => i.status === 'cancelado').sort(sortFn);
+
+    const buildRow = (item, showOk) => {
       const priTag = item.flag === 'urgent' ? '<span class="tc-badge badge-urgent">URGENTE</span>' : item.flag === 'priority' ? '<span class="tc-badge badge-priority">PRIORIDADE</span>' : '<span class="tc-badge badge-normal">NORMAL</span>';
       const status = item.status || 'pendente';
-      const statusMap = {pendente:'status-pendente',comprado:'status-comprado',cancelado:'status-cancelado'};
-      const statusLabel = {pendente:'PENDENTE',comprado:'COMPRADO',cancelado:'CANCELADO'};
-      return `<tr>
-        <td class="item-name">${esc(item.name)}${item.obs ? `<div style="font-size:10px;color:var(--text3);margin-top:2px;">${esc(item.obs)}</div>` : ''}</td>
+      const isDone = status === 'comprado';
+      const isCanceled = status === 'cancelado';
+      const rowStyle = isDone ? 'opacity:.55;' : isCanceled ? 'opacity:.4;' : '';
+      return `<tr style="${rowStyle}">
+        <td class="item-name">${isDone ? '<span style="color:var(--success);">✓</span> ' : ''}${esc(item.name)}${item.obs ? `<div style="font-size:10px;color:var(--text3);margin-top:2px;">${esc(item.obs)}</div>` : ''}</td>
         <td style="font-family:var(--mono);font-weight:700;">${item.qty||1}</td>
         <td>${priTag}</td>
         <td><strong>${esc(item.assignee||'—')}</strong></td>
         <td style="font-size:10px;color:var(--text3);font-family:var(--mono);">${item.date||'—'}</td>
         <td>
-          <select class="item-status-btn ${statusMap[status]}" onchange="changeItemStatus('${item.id}',this.value)">
-            <option value="pendente" ${status==='pendente'?'selected':''}>PENDENTE</option>
-            <option value="comprado" ${status==='comprado'?'selected':''}>COMPRADO</option>
-            <option value="cancelado" ${status==='cancelado'?'selected':''}>CANCELADO</option>
-          </select>
+          ${!isDone && !isCanceled
+            ? `<button class="tc-act done-act" onclick="changeItemStatus('${item.id}','comprado')" style="font-size:11px;padding:4px 12px;">✓ OK — Baixado</button>`
+            : isDone
+              ? `<span style="font-size:11px;font-weight:800;color:var(--success);">✅ Baixado</span>`
+              : `<span style="font-size:11px;font-weight:700;color:var(--text3);">Cancelado</span>`
+          }
         </td>
-        <td><button class="tc-act del-act" onclick="deleteItem('${item.id}')">✕</button></td>
+        <td>
+          ${isDone ? `<button class="tc-act" onclick="changeItemStatus('${item.id}','pendente')" title="Reabrir">↩</button>` : ''}
+          <button class="tc-act del-act" onclick="deleteItem('${item.id}')">✕</button>
+        </td>
       </tr>`;
-    }).join('');
+    };
+
+    let html = '';
+    if (pending.length > 0) {
+      html += `<tr><td colspan="7" style="padding:8px 4px 4px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);border-top:none;">⏳ Pendentes (${pending.length})</td></tr>`;
+      html += pending.map(i => buildRow(i, true)).join('');
+    }
+    if (baixados.length > 0) {
+      html += `<tr><td colspan="7" style="padding:12px 4px 4px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;color:var(--success);border-top:1px solid var(--border);">✅ Baixados (${baixados.length})</td></tr>`;
+      html += baixados.map(i => buildRow(i, false)).join('');
+    }
+    if (cancelados.length > 0) {
+      html += `<tr><td colspan="7" style="padding:12px 4px 4px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);border-top:1px solid var(--border);">✕ Cancelados (${cancelados.length})</td></tr>`;
+      html += cancelados.map(i => buildRow(i, false)).join('');
+    }
+    body.innerHTML = html;
 
     // Update dashboard badge
-    document.getElementById('d-items').textContent = pendItems.filter(i => (i.status||'pendente') === 'pendente').length;
+    document.getElementById('d-items').textContent = pending.length;
   };
 
   // ===== RELATÓRIOS =====
@@ -1601,6 +1683,14 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   // ===== TASK ACTIONS =====
   window.getTasks = function(day, id) {
     return (tasks[day]||[]).find(t => t.id === id) || {};
+  };
+
+  window.getTaskFromHistory = function(id, day) {
+    // Try tasks first (done tasks still live in tasks[day])
+    const t = (tasks[day]||[]).find(t => t.id === id);
+    if (t) return {...t, _day: day};
+    // Fallback to history array
+    return history.find(h => h.id === id) || {};
   };
 
   window.openAddMain = function() {
@@ -2294,6 +2384,227 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     const el = document.getElementById(id);
     if (el) el.addEventListener('click', function(e) { if (e.target === this) this.style.display = 'none'; });
   });
+
+  // ===== FOCUS DAY MODE =====
+  let focusFilter = 'all'; // all | urgent | pending | done | interno | externo
+  let focusSearch = '';
+
+  window.todayDayName = function todayDayName() {
+    const map = {1:'Segunda',2:'Terça',3:'Quarta',4:'Quinta',5:'Sexta'};
+    return map[new Date().getDay()] || null;
+  };
+  function todayDayName() { return window.todayDayName(); }
+
+  window.openFocusDay = function(day) {
+    if (!day) return;
+    focusFilter = 'all'; focusSearch = '';
+    // Build or reuse overlay
+    let ov = document.getElementById('focus-overlay');
+    if (!ov) {
+      ov = document.createElement('div');
+      ov.id = 'focus-overlay';
+      document.body.appendChild(ov);
+      ov.addEventListener('click', e => { if (e.target === ov) closeFocusDay(); });
+    }
+    ov.dataset.day = day;
+    renderFocusDay();
+    ov.classList.add('open');
+    requestAnimationFrame(() => ov.classList.add('visible'));
+    document.body.style.overflow = 'hidden';
+  };
+
+  window.closeFocusDay = function() {
+    const ov = document.getElementById('focus-overlay');
+    if (!ov) return;
+    ov.classList.remove('visible');
+    setTimeout(() => { ov.classList.remove('open'); document.body.style.overflow = ''; }, 260);
+  };
+
+  function renderFocusDay() {
+    const ov = document.getElementById('focus-overlay');
+    if (!ov) return;
+    const day = ov.dataset.day;
+    const allTasks = tasks[day] || [];
+    const open = allTasks.filter(t => !t.done);
+    const done = allTasks.filter(t => t.done);
+    const urgent = open.filter(t => t.urgent);
+    const priority = open.filter(t => t.priority && !t.urgent);
+    const total = allTasks.length;
+    const doneCount = done.length;
+    const pct = total > 0 ? Math.round((doneCount/total)*100) : 0;
+
+    const colInfo = TRELLO_COLS.find(c => colIdToDay(c.id) === day) || {dot:'var(--accent)', label: day};
+
+    let filtered = [...allTasks];
+    if (focusFilter === 'urgent') filtered = allTasks.filter(t => t.urgent && !t.done);
+    else if (focusFilter === 'pending') filtered = allTasks.filter(t => !t.done);
+    else if (focusFilter === 'done') filtered = allTasks.filter(t => t.done);
+    else if (focusFilter === 'interno') filtered = allTasks.filter(t => (t.tipo||'') === 'interno');
+    else if (focusFilter === 'externo') filtered = allTasks.filter(t => (t.tipo||'') !== 'interno');
+    if (focusSearch.trim()) {
+      const q = focusSearch.toLowerCase();
+      filtered = filtered.filter(t => (t.title||'').toLowerCase().includes(q) || (t.client||'').toLowerCase().includes(q) || (t.order||'').toLowerCase().includes(q) || (t.obs||'').toLowerCase().includes(q));
+    }
+    // Sort: urgent → priority → normal → done
+    filtered.sort((a,b) => {
+      const score = t => t.done ? 0 : t.urgent ? 3 : t.priority ? 2 : 1;
+      return score(b) - score(a);
+    });
+
+    const isToday = todayDayName() === day;
+    const filterBtns = [
+      {k:'all', lbl:'Todos'},
+      {k:'urgent', lbl:'🔴 Urgentes', cls:'fa-urg'},
+      {k:'pending', lbl:'⏳ Pendentes'},
+      {k:'done', lbl:'✅ Concluídas', cls:'fa-done'},
+      {k:'interno', lbl:'🏠 Internas'},
+      {k:'externo', lbl:'👤 Externas'},
+    ].map(f => {
+      const ac = focusFilter===f.k ? ('fa '+(f.cls||'')) : '';
+      return '<button class="ffbtn ' + ac + '" onclick="focusSetFilter(\'' + f.k + '\')">' + f.lbl + '</button>';
+    }).join('');
+
+    ov.innerHTML = `
+      <div class="focus-panel">
+        <div class="focus-header">
+          <div class="focus-header-top">
+            <div class="focus-day-name">
+              <span style="width:13px;height:13px;border-radius:50%;background:${colInfo.dot};display:inline-block;flex-shrink:0;"></span>
+              ${day.toUpperCase()}${isToday ? '<span style="font-size:12px;background:var(--accent);color:white;padding:2px 8px;border-radius:8px;font-weight:800;letter-spacing:.02em;">HOJE</span>' : ''}
+            </div>
+            <button class="focus-close-btn" onclick="closeFocusDay()">← Voltar para Semana</button>
+          </div>
+          <div class="focus-stats-row">
+            <span class="fstat">📋 ${open.length} abertas</span>
+            ${urgent.length > 0 ? `<span class="fstat urg">🔴 ${urgent.length} urgentes</span>` : ''}
+            ${priority.length > 0 ? `<span class="fstat pri">⚡ ${priority.length} prioritárias</span>` : ''}
+            <span class="fstat done">✅ ${doneCount} concluídas</span>
+            <span class="fstat">${pct}% do dia</span>
+          </div>
+          <div class="focus-prog-bar"><div class="focus-prog-fill" style="width:${pct}%"></div></div>
+        </div>
+        <div class="focus-filters">
+          ${filterBtns}
+          <input class="focus-search" placeholder="🔍 Buscar..." value="${esc(focusSearch)}" oninput="focusSetSearch(this.value)">
+        </div>
+        <div class="focus-body" id="focus-body"></div>
+      </div>`;
+
+    const body = ov.querySelector('#focus-body');
+    if (filtered.length === 0) {
+      body.innerHTML = `<div class="focus-empty">Nenhuma tarefa encontrada para este filtro.</div>`;
+      return;
+    }
+
+    const urgCards = filtered.filter(t => t.urgent && !t.done);
+    const priCards = filtered.filter(t => t.priority && !t.urgent && !t.done);
+    const normCards = filtered.filter(t => !t.urgent && !t.priority && !t.done);
+    const doneCards = filtered.filter(t => t.done);
+
+    const renderSection = (label, arr, cls) => {
+      if (!arr.length) return;
+      const lbl = document.createElement('div');
+      lbl.className = 'focus-section-lbl';
+      lbl.textContent = label;
+      body.appendChild(lbl);
+      arr.forEach(task => body.appendChild(buildFocusCard(task, day)));
+    };
+
+    if (urgCards.length) renderSection(`🔴 Urgentes (${urgCards.length})`, urgCards);
+    if (priCards.length) renderSection(`⚡ Prioritárias (${priCards.length})`, priCards);
+    if (normCards.length) renderSection(`📋 Normais (${normCards.length})`, normCards);
+    if (doneCards.length) renderSection(`✅ Concluídas (${doneCards.length})`, doneCards);
+  }
+
+  function buildFocusCard(task, day) {
+    const div = document.createElement('div');
+    const isDone = !!task.done;
+    let cls = 'fcard';
+    if (!isDone) { if (task.urgent) cls += ' fc-urg'; else if (task.priority) cls += ' fc-pri'; }
+    else cls += ' fc-done';
+    div.className = cls;
+
+    const avCls = {JOÃO:'av-joao',GABRIEL:'av-gabriel',GUSTAVO:'av-gustavo',EXTERNO:'av-externo'};
+    const av = avCls[(task.assignee||'').toUpperCase()] || 'av-gen';
+    const tipoLabel = task.tipo === 'interno' ? '🏠 Interno' : '👤 Cliente';
+    const tipoCls = task.tipo === 'interno' ? 'interno' : '';
+
+    const badgesHTML = [
+      task.urgent ? '<span class="tc-badge badge-urgent">🔴 URGENTE</span>' : '',
+      task.priority && !task.urgent ? '<span class="tc-badge badge-priority">PRIORIDADE</span>' : '',
+      isDone ? '<span class="tc-badge badge-done">CONCLUÍDA</span>' : '',
+      `<span class="tc-badge badge-tipo ${tipoCls}">${tipoLabel}</span>`,
+      task.date ? `<span class="tc-badge badge-date">📅 ${esc(task.date)}</span>` : '',
+      isOverdue(task) && !isDone ? '<span class="tc-badge" style="background:var(--urgent-dim);color:var(--urgent);border-color:var(--urgent-border);">⏰ ATRASADA</span>' : '',
+    ].filter(Boolean).join('');
+
+    const metaHTML = [
+      task.assignee ? `<span>👤 <b>${esc(task.assignee)}</b></span>` : '',
+      task.order ? `<span>🔢 <b>${esc(task.order)}</b></span>` : '',
+      task.client ? `<span>🏢 <b>${esc(task.client)}</b></span>` : '',
+      task.equipment ? `<span>💻 <b>${esc(task.equipment)}</b></span>` : '',
+      task.qty ? `<span>📦 Qtd: <b>${task.qty}</b></span>` : '',
+    ].filter(Boolean).join('');
+
+    const obsHTML = task.obs ? `<div class="fcard-obs">${highlightKeywords(esc(task.obs))}</div>` : '';
+
+    const actHTML = !isDone
+      ? `<button class="tc-act done-act" onclick="focusToggleDone('${day}','${task.id}')">✓ Concluir</button>
+         <button class="tc-act" onclick="openCardDetail(getTasks('${day}','${task.id}'))">👁 Ver</button>
+         <button class="tc-act" onclick="openEdit('${day}','${task.id}');closeFocusDay()">✏️ Editar</button>`
+      : `<button class="tc-act" onclick="focusToggleDone('${day}','${task.id}')">↩ Reabrir</button>`;
+
+    div.innerHTML = `
+      <div class="fcard-title ${isDone?'stk':''}">${esc(task.title)}</div>
+      ${badgesHTML ? `<div class="fcard-badges">${badgesHTML}</div>` : ''}
+      ${metaHTML ? `<div class="fcard-meta">${metaHTML}</div>` : ''}
+      ${obsHTML}
+      <div class="fcard-actions">${actHTML}</div>`;
+    return div;
+  }
+
+  window.focusToggleDone = function(day, id) {
+    const t = (tasks[day]||[]).find(t => t.id === id);
+    if (!t) return;
+    t.done = !t.done;
+    if (t.done) {
+      const now = new Date();
+      t.doneAt = now.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'})+' '+now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+      if (!history.find(h=>h.id===id)) history.push({...t,_day:day});
+    } else {
+      history = history.filter(h=>h.id!==id);
+    }
+    persistTasks();
+    renderFocusDay();
+    updateNavBadges();
+    renderDashboard();
+  };
+
+  window.focusSetFilter = function(f) { focusFilter = f; renderFocusDay(); };
+  window.focusSetSearch = function(v) { focusSearch = v; renderFocusDay(); };
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      const ov = document.getElementById('focus-overlay');
+      if (ov && ov.classList.contains('open')) closeFocusDay();
+    }
+  });
+
+  // Update dashboard Meu Dia banner
+  function updateMeuDiaBanner() {
+    const banner = document.getElementById('meu-dia-banner');
+    if (!banner) return;
+    const day = todayDayName();
+    if (!day) { banner.style.display='none'; return; }
+    banner.style.display = 'flex';
+    const el = document.getElementById('meu-dia-nome');
+    const countEl = document.getElementById('meu-dia-count');
+    const urgEl = document.getElementById('meu-dia-urg');
+    if (el) el.textContent = day.toUpperCase();
+    const dayTasks = (tasks[day]||[]).filter(t=>!t.done);
+    if (countEl) countEl.textContent = dayTasks.length;
+    if (urgEl) urgEl.textContent = dayTasks.filter(t=>t.urgent).length;
+  }
 
   // ===== INIT =====
   showSection('dashboard');
