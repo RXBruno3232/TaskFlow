@@ -403,8 +403,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .tb-col-stats{display:flex;gap:5px;align-items:center;}
 .tb-stat{font-size:10px;font-family:var(--mono);font-weight:700;padding:2px 8px;border-radius:8px;background:var(--surface3);color:var(--text3);}
 .tb-stat.urg{background:var(--urgent-dim);color:var(--urgent);}
-.tb-col-body{flex:1;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:7px;}
-.tb-card{background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:12px 13px;transition:border-color .14s,transform .1s,box-shadow .12s;cursor:pointer;position:relative;overflow:hidden;}
+.tb-col-body{flex:1;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:7px;min-height:0;}
+.tb-card{background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:12px 13px;transition:border-color .14s,transform .1s,box-shadow .12s;cursor:pointer;position:relative;overflow:hidden;flex-shrink:0;}
 .tb-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px 0 0 3px;}
 .tb-card.tb-urg::before{background:var(--urgent);}
 .tb-card.tb-pri::before{background:#F59E0B;}
@@ -496,6 +496,41 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 /* ===== SELB BADGE ===== */
 .concl-selb-badge{font-family:var(--mono);font-size:10px;font-weight:800;color:var(--accent2);background:var(--accent-dim);border:1px solid rgba(91,91,214,0.28);border-radius:5px;padding:1px 8px;letter-spacing:2px;transition:all .13s;}
 .concl-selb-badge:hover{background:rgba(91,91,214,0.22);border-color:var(--accent);}
+
+/* ===== TV MODE ===== */
+.tv-col{flex:1;display:flex;flex-direction:column;border-right:1px solid rgba(255,255,255,0.06);min-width:0;}
+.tv-col:last-child{border-right:none;}
+.tv-col-header{padding:20px 24px 16px;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,0.07);}
+.tv-col-avatar{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:white;letter-spacing:-.5px;margin-bottom:12px;}
+.tv-col-name{font-size:26px;font-weight:900;color:#eeeef5;letter-spacing:-.5px;margin-bottom:4px;}
+.tv-col-stats{font-size:13px;font-weight:700;color:#4E5068;display:flex;gap:12px;align-items:center;}
+.tv-col-stats .urg{color:#F04C5D;}
+.tv-col-prog{height:4px;background:rgba(255,255,255,0.06);flex-shrink:0;}
+.tv-col-prog-fill{height:100%;transition:width .5s ease;}
+.tv-col-body{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;}
+.tv-col-body::-webkit-scrollbar{width:4px;}
+.tv-col-body::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:2px;}
+.tv-card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:16px 18px;position:relative;overflow:hidden;flex-shrink:0;}
+.tv-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:4px 0 0 4px;}
+.tv-card.tv-urg{border-color:rgba(240,76,93,0.25);}
+.tv-card.tv-urg::before{background:#F04C5D;}
+.tv-card.tv-pri::before{background:#F59E0B;}
+.tv-card.tv-normal::before{background:rgba(255,255,255,0.1);}
+.tv-card.tv-done{opacity:.38;}
+.tv-card.tv-done::before{background:#10B981;}
+.tv-card-title{font-size:15px;font-weight:800;color:#eeeef5;line-height:1.4;margin-bottom:10px;}
+.tv-card-title.stk{text-decoration:line-through;color:#4E5068;}
+.tv-card-badges{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;}
+.tv-badge{font-size:10px;font-weight:800;padding:3px 8px;border-radius:5px;letter-spacing:.02em;}
+.tv-badge-urg{background:rgba(240,76,93,0.15);color:#F04C5D;border:1px solid rgba(240,76,93,0.3);}
+.tv-badge-pri{background:rgba(245,158,11,0.13);color:#F59E0B;border:1px solid rgba(245,158,11,0.3);}
+.tv-badge-done{background:rgba(16,185,129,0.12);color:#10B981;border:1px solid rgba(16,185,129,0.28);}
+.tv-badge-cli{background:rgba(91,91,214,0.12);color:#7C7FE8;border:1px solid rgba(91,91,214,0.22);}
+.tv-badge-int{background:rgba(107,114,128,0.14);color:#9CA3AF;border:1px solid rgba(107,114,128,0.25);}
+.tv-card-meta{display:flex;flex-wrap:wrap;gap:8px;font-size:11px;color:#4E5068;font-weight:700;}
+.tv-card-meta b{color:#8E90A8;}
+.tv-card-day{font-size:10px;font-weight:800;padding:2px 9px;border-radius:5px;background:rgba(255,255,255,0.05);color:#4E5068;border:1px solid rgba(255,255,255,0.07);display:inline-block;margin-bottom:9px;}
+.tv-empty{text-align:center;padding:40px 16px;color:#4E5068;font-size:14px;font-weight:700;}
 </style>
 </head>
 <body>
@@ -703,8 +738,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   <div id="view-techboard" style="display:none">
     <!-- Tab bar -->
     <div style="display:flex;align-items:center;gap:0;margin-bottom:16px;border-bottom:2px solid var(--border);">
-      <button id="tb-tab-resp" onclick="switchTbTab('resp')" style="padding:9px 20px;background:none;border:none;border-bottom:2px solid var(--accent);margin-bottom:-2px;font-family:var(--font);font-size:12px;font-weight:800;color:var(--accent2);cursor:pointer;">⚙️ Responsáveis</button>
-      <button id="tb-tab-pend" onclick="switchTbTab('pend')" style="padding:9px 20px;background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;font-family:var(--font);font-size:12px;font-weight:700;color:var(--text3);cursor:pointer;">📋 Pendências <span id="tb-pend-badge" style="display:none;background:var(--accent);color:white;font-size:9px;font-weight:800;padding:1px 6px;border-radius:8px;margin-left:4px;">0</span></button>
+      <button id="tb-tab-resp" style="padding:9px 20px;background:none;border:none;border-bottom:2px solid var(--accent);margin-bottom:-2px;font-family:var(--font);font-size:12px;font-weight:800;color:var(--accent2);cursor:default;">⚙️ Responsáveis</button>
     </div>
 
     <!-- Tab: Responsáveis -->
@@ -722,26 +756,12 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
             <option value="all">Todas</option>
             <option value="done">Concluídas</option>
           </select>
+          <button onclick="openTvMode()" style="padding:6px 16px;border-radius:8px;border:none;background:linear-gradient(135deg,#1a1a2e,#16213e);color:#e0e0ff;font-family:var(--font);font-size:12px;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 2px 12px rgba(0,0,0,0.4);transition:opacity .13s,transform .1s;" onmouseenter="this.style.opacity='.85';this.style.transform='translateY(-1px)'" onmouseleave="this.style.opacity='1';this.style.transform=''">📺 Modo TV</button>
         </div>
       </div>
       <div class="trello-board" id="techboard-board"></div>
     </div>
 
-    <!-- Tab: Pendências -->
-    <div id="tb-panel-pend" style="display:none;">
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
-        <div class="section-title" style="font-size:16px;">📋 Pendências Importadas</div>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <input type="text" id="tb-pend-search" placeholder="🔍 Buscar descrição ou cliente..." oninput="renderPendencias()" style="padding:6px 13px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-family:var(--font);font-size:11px;outline:none;min-width:220px;">
-          <label style="padding:6px 14px;border-radius:8px;border:1px solid var(--accent);background:var(--accent-dim);color:var(--accent2);font-family:var(--font);font-size:11px;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:5px;" title="Importar planilha para Pendências">
-            📥 Importar Planilha
-            <input type="file" accept=".csv,.xlsx,.xls" id="pend-import-file" style="display:none" onchange="handlePendImport(this)"/>
-          </label>
-          <button onclick="clearPendencias()" style="padding:6px 12px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--text3);font-family:var(--font);font-size:11px;font-weight:700;cursor:pointer;" title="Limpar todas as pendências">🗑 Limpar</button>
-        </div>
-      </div>
-      <div id="pend-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;"></div>
-    </div>
   </div>
 
   <!-- SEM REVISÃO -->
@@ -894,6 +914,28 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 </div>
 
 <div class="sync-bar" id="sync-bar">✓ Salvo</div>
+
+<!-- TV MODE OVERLAY -->
+<div id="tv-overlay" style="display:none;position:fixed;inset:0;z-index:9999;background:#08090f;font-family:'Sora',sans-serif;flex-direction:column;overflow:hidden;">
+  <!-- TV Header -->
+  <div id="tv-header" style="padding:18px 32px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.07);flex-shrink:0;background:rgba(255,255,255,0.02);">
+    <div style="display:flex;align-items:center;gap:14px;">
+      <div style="width:38px;height:38px;background:linear-gradient(135deg,#5B5BD6,#8B5CF6);border-radius:10px;display:flex;align-items:center;justify-content:center;">
+        <svg width="18" height="18" viewBox="0 0 24 24" stroke="white" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+      </div>
+      <div>
+        <div style="font-size:18px;font-weight:900;color:#eeeef5;letter-spacing:-.3px;">Task<span style="color:#7C7FE8;">Flow</span> <span style="font-size:12px;color:#4E5068;font-weight:600;">Painel de Equipe</span></div>
+        <div id="tv-subtitle" style="font-size:11px;color:#4E5068;font-weight:700;margin-top:1px;font-family:'JetBrains Mono',monospace;"></div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div id="tv-clock" style="font-size:22px;font-weight:800;color:#7C7FE8;font-family:'JetBrains Mono',monospace;letter-spacing:2px;"></div>
+      <button onclick="closeTvMode()" style="padding:8px 18px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.06);color:#8E90A8;font-family:'Sora',sans-serif;font-size:12px;font-weight:800;cursor:pointer;transition:all .13s;" onmouseenter="this.style.borderColor='rgba(240,76,93,0.5)';this.style.color='#F04C5D'" onmouseleave="this.style.borderColor='rgba(255,255,255,0.12)';this.style.color='#8E90A8'">✕ Fechar</button>
+    </div>
+  </div>
+  <!-- TV Board -->
+  <div id="tv-board" style="flex:1;display:flex;gap:0;overflow:hidden;"></div>
+</div>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
@@ -1093,8 +1135,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     if (filterTipo) list = list.filter(t => (t.tipo||'cliente') === filterTipo);
     if (filterSort === 'date') list.sort((a,b) => (a.dateRaw||'9999') < (b.dateRaw||'9999') ? -1 : 1);
     else if (filterSort === 'urgency') list.sort((a,b) => ((b.urgent?2:0)+(b.priority?1:0)) - ((a.urgent?2:0)+(a.priority?1:0)));
-    else if (filterSort === 'days_asc') list.sort((a,b) => (parseInt(b.daysRunning)||0) - (parseInt(a.daysRunning)||0));
-    else if (filterSort === 'days_desc') list.sort((a,b) => (parseInt(a.daysRunning)||0) - (parseInt(b.daysRunning)||0));
+    else if (filterSort === 'days_asc') list.sort((a,b) => calcDays(b) - calcDays(a));
+    else if (filterSort === 'days_desc') list.sort((a,b) => calcDays(a) - calcDays(b));
     return list;
   }
 
@@ -1326,8 +1368,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 
     // Days badge
     let daysTag = '';
-    if (task.daysRunning > 0 && !isDone) {
-      const n = parseInt(task.daysRunning);
+    const _days = calcDays(task);
+    if (_days > 0 && !isDone) {
+      const n = _days;
       let dCls = n < 5 ? 'green' : n < 10 ? 'yellow' : 'red';
       daysTag = `<span class="tc-badge" style="background:var(--${dCls==='green'?'success':dCls==='yellow'?'warn':'urgent'}-dim);color:var(--${dCls==='green'?'success':dCls==='yellow'?'warn':'urgent'});border:1px solid var(--${dCls==='green'?'success':dCls==='yellow'?'warn':'urgent'}-border);">⏱ ${n}d</span>`;
     }
@@ -1526,8 +1569,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     if (filterTipo) allTasks = allTasks.filter(t => (t.tipo||'cliente') === filterTipo);
     if (filterSort === 'date') allTasks.sort((a,b) => (a.dateRaw||'9999') < (b.dateRaw||'9999') ? -1 : 1);
     else if (filterSort === 'urgency') allTasks.sort((a,b) => ((b.urgent?2:0)+(b.priority?1:0)) - ((a.urgent?2:0)+(a.priority?1:0)));
-    else if (filterSort === 'days_asc') allTasks.sort((a,b) => (parseInt(b.daysRunning)||0) - (parseInt(a.daysRunning)||0));
-    else if (filterSort === 'days_desc') allTasks.sort((a,b) => (parseInt(a.daysRunning)||0) - (parseInt(b.daysRunning)||0));
+    else if (filterSort === 'days_asc') allTasks.sort((a,b) => calcDays(b) - calcDays(a));
+    else if (filterSort === 'days_desc') allTasks.sort((a,b) => calcDays(a) - calcDays(b));
 
     if (allTasks.length === 0) {
       grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;padding:32px 0;"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="15" x2="12" y2="15"/></svg>Nenhum pedido em aberto</div>';
@@ -1557,7 +1600,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
         ${t.order ? `<div class="oc-field">Pedido <span>${esc(t.order)}</span></div>` : ''}
         ${t.client ? `<div class="oc-field">Cliente <span>${esc(t.client)}</span></div>` : ''}
         ${t.equipment ? `<div class="oc-field">Equipamento <span>${esc(t.equipment)}</span></div>` : ''}
-        ${t.daysRunning > 0 ? `<div class="oc-field">Em andamento <span>${t.daysRunning} dias</span></div>` : ''}
+        ${calcDays(t) > 0 ? `<div class="oc-field">Em andamento <span>${calcDays(t)} dias</span></div>` : ''}
         <div class="oc-field">Dia <span>${esc(day)}</span></div>
       </div>
       ${obsHighlight}
@@ -1686,7 +1729,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
           ${t.client?`<div class="oc-field">🏢 Cliente <span>${esc(t.client)}</span></div>`:''}
           ${t.equipment?`<div class="oc-field">💻 Equipamento <span>${esc(t.equipment)}</span></div>`:''}
           ${t._day?`<div class="oc-field">📅 Dia <span>${esc(t._day)}</span></div>`:''}
-          ${t.daysRunning?`<div class="oc-field">⏱ Dias em aberto <span>${t.daysRunning}d</span></div>`:''}
+          ${calcDays(t)?`<div class="oc-field">⏱ Dias em aberto <span>${calcDays(t)}d</span></div>`:''}
           ${t.doneAt?`<div class="oc-field" style="color:var(--success)">✅ Concluída em <span style="color:var(--success);">${t.doneAt}</span></div>`:''}
         </div>
         ${t.desc?`<div style="margin-bottom:12px;"><div style="font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Descrição</div><div style="font-size:12px;color:var(--text2);line-height:1.6;background:var(--surface2);border-radius:8px;padding:10px 12px;">${esc(t.desc)}</div></div>`:''}
@@ -1915,7 +1958,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
         <td>${tipoTag}</td>
         <td>${priTag}</td>
         <td>${t.date ? `<span class="tc-badge badge-date">${t.date}</span>` : '—'}${isOverdue(t) ? ' <span class="tc-badge badge-overdue">ATRASADA</span>' : ''}</td>
-        <td style="font-family:var(--mono);">${t.daysRunning||0}d</td>
+        <td style="font-family:var(--mono);">${calcDays(t)||0}d</td>
       </tr>`;
     }).join('');
   }
@@ -2073,7 +2116,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
       if (task) Object.assign(task, {title,desc,obs,order,client,equipment,date,dateRaw,assignee,selb,qty,daysRunning,tipo:currentTipo,urgent:currentFlag==='urgent',priority:currentFlag==='priority'});
     } else {
       if (!tasks[modalDay]) tasks[modalDay] = [];
-      tasks[modalDay].push({id:uid(),title,desc,obs,order,client,equipment,date,dateRaw,assignee,selb,qty,daysRunning,tipo:currentTipo,urgent:currentFlag==='urgent',priority:currentFlag==='priority',done:false});
+      tasks[modalDay].push({id:uid(),title,desc,obs,order,client,equipment,date,dateRaw,assignee,selb,qty,daysRunning,importedAt:new Date().toISOString().split('T')[0],tipo:currentTipo,urgent:currentFlag==='urgent',priority:currentFlag==='priority',done:false});
     }
     persistTasks(); closeModal(); if (!firebaseOk) render();
   };
@@ -2295,7 +2338,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
       {label:'Equipamento',value:task.equipment},
       {label:'Responsável',value:task.assignee},
       {label:'Prazo',value:task.date},
-      {label:'Dias em andamento',value:task.daysRunning > 0 ? task.daysRunning + ' dias' : ''},
+      {label:'Dias em andamento',value:calcDays(task) > 0 ? calcDays(task) + ' dias' : ''},
       {label:'Quantidade',value:task.qty > 0 ? String(task.qty) : ''},
       {label:'Obs. Comercial',value:task.obs},
       {label:'Descrição',value:task.desc},
@@ -2421,6 +2464,18 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   };
 
   // Normaliza string para comparação de cabeçalho (remove acentos, lowercase, trim)
+  // ===== DIAS EM ANDAMENTO (contador automático) =====
+  // Se o card tem importedAt, calcula dias reais decorridos + offset do daysRunning original.
+  // Se não tem importedAt (card antigo), usa daysRunning estático como antes.
+  function calcDays(task) {
+    if (!task.importedAt) return task.daysRunning || 0;
+    const start = new Date(task.importedAt);
+    const today = new Date();
+    start.setHours(0,0,0,0); today.setHours(0,0,0,0);
+    const elapsed = Math.floor((today - start) / 86400000);
+    return (task.daysRunning || 0) + elapsed;
+  }
+
   function normHeader(s) {
     return String(s).toLowerCase().trim()
       .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
@@ -2443,6 +2498,18 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     };
 
     let imported = 0;
+    let skipped = 0;
+
+    // Coleta todos os números de pedido já existentes em qualquer dia
+    const existingOrders = new Set();
+    DAYS.forEach(day => {
+      (tasks[day]||[]).forEach(t => {
+        if (t.order && String(t.order).trim()) {
+          existingOrders.add(String(t.order).trim());
+        }
+      });
+    });
+
     for (let i = 1; i < rows.length; i++) {
       const cols = rows[i];
       if (!cols.some(c => String(c).trim())) continue;
@@ -2460,6 +2527,12 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
       const daysRaw   = get(['dias aberto','dias uteis','dias','days running','prazo']);
       const daysRunning = parseInt(daysRaw) || 0;
 
+      // Verificação de duplicidade pelo número do pedido
+      if (order && existingOrders.has(order)) {
+        skipped++;
+        continue;
+      }
+
       // Roteamento automático por Razão Social:
       // Selbetti → Uso Interno | Qualquer outro → Cliente
       const isSelbetti = /selbetti/i.test(client);
@@ -2472,13 +2545,23 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
       tasks[DAYS[0]].push({
         id: uid(), title, desc: '', obs, order, client, equipment,
         date: '', dateRaw: '', assignee, qty: 0, daysRunning,
+        importedAt: new Date().toISOString().split('T')[0],
         tipo, urgent: false, priority: false, done: false
       });
       imported++;
     }
 
-    if (imported > 0) { alert(`${imported} tarefa(s) importada(s)!`); persistTasks(); if (!firebaseOk) render(); }
-    else alert('Nenhuma tarefa importada. Verifique o formato das colunas.');
+    if (imported > 0) {
+      const msg = skipped > 0
+        ? `${imported} tarefa(s) importada(s)!\n${skipped} pedido(s) ignorado(s) por já existirem.`
+        : `${imported} tarefa(s) importada(s)!`;
+      alert(msg);
+      persistTasks(); if (!firebaseOk) render();
+    } else if (skipped > 0) {
+      alert(`Nenhuma tarefa nova importada — ${skipped} pedido(s) já existentes foram ignorados.`);
+    } else {
+      alert('Nenhuma tarefa importada. Verifique o formato das colunas.');
+    }
   }
 
   function parseCSV(text) {
@@ -2946,7 +3029,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
           task.order    ? `<span>🔢 <b>${esc(task.order)}</b></span>`    : '',
           task.client   ? `<span>🏢 <b>${esc(task.client)}</b></span>`   : '',
           task.selb     ? `<span>🔖 <b>SELB ${esc(task.selb)}</b></span>` : '',
-          task.daysRunning ? `<span>⏱ <b>${task.daysRunning}d</b></span>` : '',
+          calcDays(task) ? `<span>⏱ <b>${calcDays(task)}d</b></span>` : '',
         ].filter(Boolean).join('');
 
         const card = document.createElement('div');
@@ -2976,134 +3059,152 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   };
 
   // ===== TECHBOARD TABS =====
-  let currentTbTab = 'resp';
-
+  // Pendências removidas — painel de responsáveis sempre ativo
   window.switchTbTab = function(tab) {
-    currentTbTab = tab;
-    document.getElementById('tb-panel-resp').style.display = tab === 'resp' ? '' : 'none';
-    document.getElementById('tb-panel-pend').style.display = tab === 'pend' ? '' : 'none';
-    const btnResp = document.getElementById('tb-tab-resp');
-    const btnPend = document.getElementById('tb-tab-pend');
-    btnResp.style.borderBottomColor = tab === 'resp' ? 'var(--accent)' : 'transparent';
-    btnResp.style.color = tab === 'resp' ? 'var(--accent2)' : 'var(--text3)';
-    btnPend.style.borderBottomColor = tab === 'pend' ? 'var(--accent)' : 'transparent';
-    btnPend.style.color = tab === 'pend' ? 'var(--accent2)' : 'var(--text3)';
-    if (tab === 'resp') renderTechBoard();
-    else renderPendencias();
+    // mantido por compatibilidade; sempre exibe responsáveis
+    renderTechBoard();
   };
 
-  // ===== PENDÊNCIAS IMPORT =====
-  window.handlePendImport = function(input) {
-    const file = input.files[0];
-    if (!file) return;
-    const isXlsx = file.name.match(/\.xlsx?$/i);
-    if (isXlsx) {
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        try {
-          const wb = XLSX.read(e.target.result, { type: 'array' });
-          const ws = wb.Sheets[wb.SheetNames[0]];
-          const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
-          parsePendRows(rows);
-        } catch(err) { alert('Erro ao ler XLSX: ' + err.message); }
-      };
-      reader.readAsArrayBuffer(file);
-    } else {
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const text = e.target.result;
-        const lines = text.replace(/^\uFEFF/,'').split(/\r?\n/).filter(l=>l.trim());
-        let sep = ';';
-        if ((lines[0].match(/\t/g)||[]).length > (lines[0].match(/;/g)||[]).length) sep = '\t';
-        else if ((lines[0].match(/,/g)||[]).length > (lines[0].match(/;/g)||[]).length) sep = ',';
-        const rows = lines.map(l => l.split(sep).map(c => c.trim().replace(/^["']|["']$/g,'')));
-        parsePendRows(rows);
-      };
-      reader.readAsText(file, 'UTF-8');
+  // ===== TV MODE =====
+  let tvClockInterval = null;
+
+  window.openTvMode = function() {
+    const overlay = document.getElementById('tv-overlay');
+    overlay.style.display = 'flex';
+    // Fullscreen
+    try {
+      if (overlay.requestFullscreen) overlay.requestFullscreen();
+      else if (overlay.webkitRequestFullscreen) overlay.webkitRequestFullscreen();
+    } catch(e) {}
+    renderTvBoard();
+    startTvClock();
+  };
+
+  window.closeTvMode = function() {
+    const overlay = document.getElementById('tv-overlay');
+    overlay.style.display = 'none';
+    clearInterval(tvClockInterval);
+    if (document.exitFullscreen) document.exitFullscreen().catch(()=>{});
+    else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+  };
+
+  // Fechar com ESC
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && document.getElementById('tv-overlay').style.display !== 'none') {
+      closeTvMode();
     }
-    input.value = '';
-  };
+  });
 
-  function normPendHeader(h) { return String(h).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,' ').trim(); }
+  function startTvClock() {
+    const tick = () => {
+      const now = new Date();
+      const h = String(now.getHours()).padStart(2,'0');
+      const m = String(now.getMinutes()).padStart(2,'0');
+      const s = String(now.getSeconds()).padStart(2,'0');
+      const el = document.getElementById('tv-clock');
+      if (el) el.textContent = `${h}:${m}:${s}`;
 
-  function parsePendRows(rows) {
-    if (rows.length < 2) { alert('Planilha vazia.'); return; }
-    const headers = rows[0].map(normPendHeader);
-    const makeGet = (cols) => (names) => {
-      for (const n of names) {
-        const idx = headers.findIndex(h => h.includes(normPendHeader(n)));
-        if (idx >= 0 && String(cols[idx]).trim()) return String(cols[idx]).trim().replace(/^["']|["']$/g,'');
+      // Atualiza subtítulo com data
+      const sub = document.getElementById('tv-subtitle');
+      if (sub) {
+        const dias = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+        sub.textContent = `${dias[now.getDay()]}, ${now.toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'})}`;
       }
-      return '';
     };
-    let imported = 0;
-    for (let i = 1; i < rows.length; i++) {
-      const cols = rows[i];
-      if (!cols.some(c => String(c).trim())) continue;
-      const get = makeGet(cols);
-      const title  = get(['descricao equipamento','descricao','description','titulo','title','equipamento','modelo','produto']) || String(cols.find(c=>String(c).trim())||'');
-      const client = get(['razao social','razao social (cliente)','cliente','client','empresa','company']);
-      const order  = get(['pedido','order','numero pedido','cod pedido']);
-      const days   = parseInt(get(['dias aberto','dias uteis','dias','days running'])) || 0;
-      if (!title) continue;
-      pendencias.push({ id: uid(), title, client, order, days, importedAt: new Date().toLocaleDateString('pt-BR') });
-      imported++;
-    }
-    if (imported > 0) { alert(`${imported} pendência(s) importada(s)!`); persistTasks(); renderPendencias(); updatePendBadge(); }
-    else alert('Nenhuma linha importada. Verifique as colunas da planilha.');
+    tick();
+    tvClockInterval = setInterval(tick, 1000);
   }
 
-  function updatePendBadge() {
-    const badge = document.getElementById('tb-pend-badge');
-    if (!badge) return;
-    const count = (pendencias||[]).length;
-    badge.style.display = count > 0 ? '' : 'none';
-    badge.textContent = count;
-  }
+  function renderTvBoard() {
+    const board = document.getElementById('tv-board');
+    if (!board) return;
 
-  window.renderPendencias = function() {
-    const grid = document.getElementById('pend-grid');
-    if (!grid) return;
-    updatePendBadge();
-    const q = (document.getElementById('tb-pend-search')||{}).value?.toLowerCase() || '';
-    let list = pendencias || [];
-    if (q) list = list.filter(p => (p.title||'').toLowerCase().includes(q) || (p.client||'').toLowerCase().includes(q));
-    list = [...list].sort((a,b) => (b.days||0) - (a.days||0));
+    // Usa os mesmos filtros do TechBoard normal
+    const filterTipo   = (document.getElementById('tb-filter-tipo')   || {}).value || '';
+    const filterStatus = (document.getElementById('tb-filter-status') || {}).value || 'open';
 
-    if (list.length === 0) {
-      grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:50px 0;color:var(--text3);font-size:13px;font-weight:600;">
-        Nenhuma pendência. Importe uma planilha para começar.
-      </div>`;
-      return;
-    }
+    let allTasks = [];
+    DAYS.forEach(day => {
+      (tasks[day] || []).forEach(t => allTasks.push({ ...t, _day: day }));
+    });
+    if (filterTipo) allTasks = allTasks.filter(t => (t.tipo || 'cliente') === filterTipo);
+    if (filterStatus === 'open') allTasks = allTasks.filter(t => !t.done);
+    else if (filterStatus === 'done') allTasks = allTasks.filter(t => t.done);
 
-    grid.innerHTML = list.map(p => {
-      const daysColor = p.days > 30 ? 'var(--urgent)' : p.days > 15 ? '#F59E0B' : 'var(--text3)';
-      return `<div style="background:var(--surface);border:1px solid var(--border2);border-radius:12px;padding:14px 15px;transition:border-color .13s,transform .1s;position:relative;overflow:hidden;" onmouseenter="this.style.borderColor='var(--accent)';this.style.transform='translateY(-1px)'" onmouseleave="this.style.borderColor='';this.style.transform=''">
-        <div style="font-size:13px;font-weight:800;color:var(--text);line-height:1.4;margin-bottom:8px;">${esc(p.title)}</div>
-        ${p.client ? `<div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:6px;display:flex;align-items:center;gap:5px;"><span style="color:var(--text3);">🏢</span>${esc(p.client)}</div>` : ''}
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">
-          ${p.order ? `<span style="font-family:var(--mono);font-size:10px;font-weight:800;color:var(--accent2);background:var(--accent-dim);border:1px solid rgba(91,91,214,0.25);border-radius:5px;padding:1px 7px;">${esc(p.order)}</span>` : '<span></span>'}
-          ${p.days ? `<span style="font-size:10px;font-weight:800;color:${daysColor};">⏱ ${p.days}d</span>` : ''}
-          <button onclick="deletePendencia('${p.id}')" style="background:none;border:none;color:var(--text3);font-size:13px;cursor:pointer;padding:2px 5px;border-radius:4px;transition:color .12s;" onmouseenter="this.style.color='var(--urgent)'" onmouseleave="this.style.color=''">✕</button>
+    board.innerHTML = '';
+
+    TB_MEMBERS.forEach(member => {
+      const memberTasks = allTasks.filter(t =>
+        (t.assignee || '').toUpperCase() === member.key
+      ).sort((a, b) => {
+        const score = x => x.done ? -1 : x.urgent ? 3 : x.priority ? 2 : 1;
+        return score(b) - score(a);
+      });
+
+      const openCount = memberTasks.filter(t => !t.done).length;
+      const urgCount  = memberTasks.filter(t => t.urgent && !t.done).length;
+      const doneCount = memberTasks.filter(t => t.done).length;
+      const total     = memberTasks.length;
+      const pct       = total > 0 ? Math.round((doneCount / total) * 100) : 0;
+      const initials  = member.label.substring(0, 2).toUpperCase();
+
+      const col = document.createElement('div');
+      col.className = 'tv-col';
+
+      col.innerHTML = `
+        <div class="tv-col-header">
+          <div class="tv-col-avatar" style="background:${member.color};">${initials}</div>
+          <div class="tv-col-name">${member.label}</div>
+          <div class="tv-col-stats">
+            <span>${openCount} aberta${openCount !== 1 ? 's' : ''}</span>
+            ${urgCount > 0 ? `<span class="urg">🔴 ${urgCount} urgente${urgCount !== 1 ? 's' : ''}</span>` : ''}
+          </div>
         </div>
-      </div>`;
-    }).join('');
-  };
+        <div class="tv-col-prog"><div class="tv-col-prog-fill" style="width:${pct}%;background:${member.color};opacity:.6;"></div></div>
+        <div class="tv-col-body" id="tv-body-${member.key}"></div>`;
 
-  window.deletePendencia = function(id) {
-    pendencias = (pendencias||[]).filter(p => p.id !== id);
-    persistTasks();
-    renderPendencias();
-  };
+      board.appendChild(col);
 
-  window.clearPendencias = function() {
-    if (pendencias.length === 0) return;
-    if (!confirm(`Limpar todas as ${pendencias.length} pendências?`)) return;
-    pendencias = [];
-    persistTasks();
-    renderPendencias();
-  };
+      const body = col.querySelector('.tv-col-body');
+
+      if (memberTasks.length === 0) {
+        body.innerHTML = `<div class="tv-empty">✓ Sem tarefas</div>`;
+        return;
+      }
+
+      memberTasks.forEach(task => {
+        const isDone = !!task.done;
+        let cls = 'tv-card';
+        if (isDone) cls += ' tv-done';
+        else if (task.urgent) cls += ' tv-urg';
+        else if (task.priority) cls += ' tv-pri';
+        else cls += ' tv-normal';
+
+        const urgBadge  = task.urgent && !isDone ? '<span class="tv-badge tv-badge-urg">🔴 URGENTE</span>' : '';
+        const priBadge  = task.priority && !task.urgent && !isDone ? '<span class="tv-badge tv-badge-pri">PRIORIDADE</span>' : '';
+        const doneBadge = isDone ? '<span class="tv-badge tv-badge-done">✓ CONCLUÍDO</span>' : '';
+        const tipoBadge = task.tipo === 'interno'
+          ? '<span class="tv-badge tv-badge-int">🏠 Interno</span>'
+          : '<span class="tv-badge tv-badge-cli">👤 Cliente</span>';
+
+        const metaParts = [
+          task.order  ? `<span>🔢 <b>${esc(task.order)}</b></span>`  : '',
+          task.client ? `<span>🏢 <b>${esc(task.client)}</b></span>` : '',
+          task.selb   ? `<span>🔖 <b>SELB ${esc(task.selb)}</b></span>` : '',
+          calcDays(task) ? `<span>⏱ <b>${calcDays(task)}d</b></span>` : '',
+        ].filter(Boolean).join('');
+
+        const card = document.createElement('div');
+        card.className = cls;
+        card.innerHTML = `
+          <div class="tv-card-title ${isDone ? 'stk' : ''}">${esc(task.title)}</div>
+          <div class="tv-card-badges">${urgBadge}${priBadge}${doneBadge}${tipoBadge}</div>
+          ${metaParts ? `<div class="tv-card-meta">${metaParts}</div>` : ''}`;
+
+        body.appendChild(card);
+      });
+    });
+  }
 
   // ===== INIT =====
   showSection('dashboard');
