@@ -590,6 +590,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     <button class="nav-btn" id="nav-relatorios" onclick="showSection('relatorios')">📄 Relatórios</button>
     <button class="nav-btn" id="nav-semrevisao" onclick="showSection('semrevisao')">🚫 Sem Revisão <span class="nav-badge" id="nav-badge-semrevisao" style="display:none;background:#8B5CF6;">0</span></button>
     <button class="nav-btn" id="nav-techboard" onclick="showSection('techboard')">⚙️ TechBoard</button>
+    <button class="nav-btn" id="nav-aguardando" onclick="showSection('aguardando')">⏳ Aguardando Intervenção <span class="nav-badge" id="nav-badge-aguardando" style="display:none;background:#F59E0B;color:#1a1a1a;">0</span></button>
   </div>
 
   <!-- FILTER BAR -->
@@ -762,6 +763,14 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
       <div class="trello-board" id="techboard-board"></div>
     </div>
 
+  </div>
+
+  <!-- AGUARDANDO INTERVENÇÃO -->
+  <div id="view-aguardando" style="display:none">
+    <div class="section-header">
+      <div class="section-title">⏳ Aguardando Intervenção</div>
+    </div>
+    <div class="cards-grid" id="aguardando-grid"></div>
   </div>
 
   <!-- SEM REVISÃO -->
@@ -1061,6 +1070,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
           semRevisao = data.semRevisao || [];
           deletedConcluidos = data.deletedConcluidos || [];
           pendencias = data.pendencias || [];
+          window.aguardando = data.aguardando || [];
         } else {
           DAYS.forEach(d => { tasks[d] = []; });
           history = []; items = []; semRevisao = [];
@@ -1071,7 +1081,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     } else {
       try {
         const saved = localStorage.getItem('tf_v3');
-        if (saved) { const p = JSON.parse(saved); tasks = p.tasks || {}; history = p.history || []; items = p.items || []; semRevisao = p.semRevisao || []; deletedConcluidos = p.deletedConcluidos || []; pendencias = p.pendencias || []; }
+        if (saved) { const p = JSON.parse(saved); tasks = p.tasks || {}; history = p.history || []; items = p.items || []; semRevisao = p.semRevisao || []; deletedConcluidos = p.deletedConcluidos || []; pendencias = p.pendencias || []; window.aguardando = p.aguardando || []; }
       } catch(e) {}
       DAYS.forEach(d => { if (!tasks[d]) tasks[d] = []; });
       render();
@@ -1079,7 +1089,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   }
 
   function persistTasks() {
-    const payload = { tasks, history, items, semRevisao, deletedConcluidos, pendencias };
+    const payload = { tasks, history, items, semRevisao, deletedConcluidos, pendencias, aguardando: window.aguardando || [] };
     if (firebaseOk && db) {
       set(ref(db, 'tasks_v3'), payload).then(() => showSync('✓ Sincronizado'));
     } else {
@@ -1097,7 +1107,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   // ===== SECTIONS =====
   window.showSection = function(section) {
     currentSection = section;
-    const views = ['dashboard','tasks','pedidos','concluidos','cliente','interno','itens','relatorios','semrevisao','techboard'];
+    const views = ['dashboard','tasks','pedidos','concluidos','cliente','interno','itens','relatorios','semrevisao','techboard','aguardando'];
     views.forEach(v => {
       document.getElementById('view-' + v).style.display = v === section ? '' : 'none';
       document.getElementById('nav-' + v).classList.toggle('active', v === section);
@@ -1156,6 +1166,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     else if (s === 'relatorios') renderRelatorios();
     else if (s === 'semrevisao') renderSemRevisao();
     else if (s === 'techboard') { renderTechBoard(); updatePendBadge(); }
+    else if (s === 'aguardando') renderAguardando();
   }
 
   function updateTopbar() {
@@ -1214,6 +1225,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     if (concl > 0) { bConcl.style.display = ''; bConcl.textContent = concl; } else bConcl.style.display = 'none';
     const bSemRev = document.getElementById('nav-badge-semrevisao');
     if (semRevisao.length > 0) { bSemRev.style.display = ''; bSemRev.textContent = semRevisao.length; } else bSemRev.style.display = 'none';
+    const bAguard = document.getElementById('nav-badge-aguardando');
+    if (!window.aguardando) window.aguardando = [];
+    if (window.aguardando.length > 0) { bAguard.style.display = ''; bAguard.textContent = window.aguardando.length; } else bAguard.style.display = 'none';
   }
 
   // ===== DASHBOARD =====
@@ -1557,8 +1571,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   function renderPedidos() {
     const grid = document.getElementById('pedidos-grid');
     let allTasks = [];
+    const aguardandoIds = new Set((window.aguardando||[]).map(t => t.id));
     DAYS.forEach(day => {
-      (tasks[day]||[]).filter(t => !t.done).forEach(t => allTasks.push({...t, _day: day}));
+      (tasks[day]||[]).filter(t => !t.done && !aguardandoIds.has(t.id)).forEach(t => allTasks.push({...t, _day: day}));
     });
     // Apply filters
     if (filterSearch) allTasks = allTasks.filter(t => (t.title||'').toLowerCase().includes(filterSearch)||(t.client||'').toLowerCase().includes(filterSearch)||(t.order||'').toLowerCase().includes(filterSearch));
@@ -1603,10 +1618,12 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
         ${calcDays(t) > 0 ? `<div class="oc-field">Em andamento <span>${calcDays(t)} dias</span></div>` : ''}
         <div class="oc-field">Dia <span>${esc(day)}</span></div>
       </div>
+      ${t.selb ? `<div style="margin-top:7px;"><span class="concl-selb-badge">SELB ${esc(t.selb)}</span></div>` : ''}
       ${obsHighlight}
       <div class="oc-actions">
         <button class="tc-act done-act" onclick="toggleDone('${day}','${t.id}');renderPedidos();">✓ Concluir</button>
         <button class="tc-act" onclick="openEdit('${day}','${t.id}')">✏️ Editar</button>
+        <button class="tc-act" style="color:#F59E0B;border-color:rgba(245,158,11,0.3);" onclick="moverParaAguardando('${day}','${t.id}')" title="Aguardando intervenção externa">⏳ Aguardando</button>
         <button class="tc-act" style="color:#8B5CF6;border-color:rgba(139,92,246,0.3);" onclick="marcarSemRevisao('${day}','${t.id}')" title="Sem condição de revisão">🚫 Sem Rev.</button>
         <button class="tc-act del-act" onclick="deleteTask('${day}','${t.id}')">✕ Excluir</button>
       </div>
@@ -2214,6 +2231,91 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
         <div class="oc-actions">
           <button class="tc-act" style="color:var(--success);border-color:var(--success-border);" onclick="retornarParaTarefas('${t.id}')">↩ Retornar às Tarefas</button>
           <button class="tc-act del-act" onclick="deleteSemRevisao('${t.id}')">✕ Excluir</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // ===== AGUARDANDO INTERVENÇÃO =====
+  window.moverParaAguardando = function(day, id) {
+    const task = (tasks[day]||[]).find(t => t.id === id);
+    if (!task) return;
+    if (!window.aguardando) window.aguardando = [];
+    // Evita duplicata
+    if (window.aguardando.find(t => t.id === id)) return;
+    const now = new Date();
+    const movedAt = now.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'})+' '+now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    window.aguardando.push({...task, _day: day, movedAt});
+    persistTasks();
+    if (!firebaseOk) render();
+    if (currentSection === 'pedidos') renderPedidos();
+    updateNavBadges();
+  };
+
+  window.retornarDeAguardando = function(id) {
+    if (!window.aguardando) return;
+    const card = window.aguardando.find(t => t.id === id);
+    if (!card) return;
+    const day = card._day || DAYS[0];
+    // Garante que o dia existe
+    if (!tasks[day]) tasks[day] = [];
+    // Só re-insere se não existe já
+    if (!tasks[day].find(t => t.id === id)) {
+      const { _day, movedAt, ...taskData } = card;
+      tasks[day].push(taskData);
+    }
+    window.aguardando = window.aguardando.filter(t => t.id !== id);
+    persistTasks();
+    if (!firebaseOk) render();
+    renderAguardando();
+    updateNavBadges();
+  };
+
+  window.deleteAguardando = function(id) {
+    if (!confirm('Excluir este card de Aguardando Intervenção?')) return;
+    if (!window.aguardando) return;
+    window.aguardando = window.aguardando.filter(t => t.id !== id);
+    persistTasks();
+    renderAguardando();
+    updateNavBadges();
+  };
+
+  function renderAguardando() {
+    const grid = document.getElementById('aguardando-grid');
+    if (!grid) return;
+    if (!window.aguardando) window.aguardando = [];
+    if (window.aguardando.length === 0) {
+      grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;padding:32px 0;"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>Nenhum card aguardando intervenção</div>';
+      return;
+    }
+    const avCls = {JOÃO:'av-joao',GABRIEL:'av-gabriel',GUSTAVO:'av-gustavo',EXTERNO:'av-externo'};
+    grid.innerHTML = window.aguardando.map(t => {
+      const av = avCls[(t.assignee||'').toUpperCase()] || 'av-gen';
+      const tipoTag = `<span class="tc-badge badge-tipo ${t.tipo === 'interno' ? 'interno' : ''}">${t.tipo === 'interno' ? '🏠 Interno' : '👤 Cliente'}</span>`;
+      const obsHighlight = t.obs ? `<div class="oc-obs">${highlightKeywords(esc(t.obs))}</div>` : '';
+      const selbTag = t.selb ? `<div style="margin-top:5px;"><span class="concl-selb-badge">SELB ${esc(t.selb)}</span></div>` : '';
+      return `<div class="order-card" style="border-left:3px solid #F59E0B;background:rgba(245,158,11,0.04);">
+        <div class="oc-top">
+          <div class="oc-title">⏳ ${esc(t.title)}</div>
+          ${t.assignee ? `<div style="display:flex;align-items:center;gap:4px;flex-shrink:0;"><div class="tc-av ${av}" style="width:20px;height:20px;font-size:8px;">${getInitials(t.assignee)}</div><span style="font-size:11px;font-weight:700;color:var(--text2);">${esc(t.assignee)}</span></div>` : ''}
+        </div>
+        <div class="oc-badges">
+          <span class="tc-badge" style="background:rgba(245,158,11,0.13);color:#F59E0B;border:1px solid rgba(245,158,11,0.35);">AGUARDANDO</span>
+          ${tipoTag}
+          ${t.date ? `<span class="tc-badge badge-date">📅 ${t.date}</span>` : ''}
+        </div>
+        <div class="oc-meta">
+          ${t.order ? `<div class="oc-field">Pedido <span>${esc(t.order)}</span></div>` : ''}
+          ${t.client ? `<div class="oc-field">Cliente <span>${esc(t.client)}</span></div>` : ''}
+          ${t.equipment ? `<div class="oc-field">Equipamento <span>${esc(t.equipment)}</span></div>` : ''}
+          ${t._day ? `<div class="oc-field">Dia original <span>${esc(t._day)}</span></div>` : ''}
+          <div class="oc-field" style="color:var(--text3);">Movido em <span style="color:#F59E0B;">${t.movedAt||'—'}</span></div>
+        </div>
+        ${selbTag}
+        ${obsHighlight}
+        <div class="oc-actions">
+          <button class="tc-act done-act" onclick="retornarDeAguardando('${t.id}')">↩ Retornar a Pedidos</button>
+          <button class="tc-act del-act" onclick="deleteAguardando('${t.id}')">✕ Excluir</button>
         </div>
       </div>`;
     }).join('');
