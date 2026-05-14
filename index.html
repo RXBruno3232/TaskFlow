@@ -791,7 +791,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     <div style="margin-top:1rem;overflow-x:auto;">
       <div class="dash-section-title" style="margin-bottom:.6rem;">Todas as tarefas ativas</div>
       <table class="history-table">
-        <thead><tr><th>Tarefa</th><th>Coluna</th><th>Responsável</th><th>Tipo</th><th>Prioridade</th><th>Prazo</th><th>Dias</th></tr></thead>
+        <thead><tr><th>Tarefa</th><th>Coluna</th><th>Responsável</th><th>Tipo</th><th>Prioridade</th><th>SELB</th><th>Prazo</th><th>Dias</th></tr></thead>
         <tbody id="relat-body"></tbody>
       </table>
     </div>
@@ -1968,12 +1968,14 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     body.innerHTML = all.map(t => {
       const priTag = t.urgent ? '<span class="tc-badge badge-urgent">URGENTE</span>' : t.priority ? '<span class="tc-badge badge-priority">PRIORIDADE</span>' : '<span class="tc-badge badge-normal">NORMAL</span>';
       const tipoTag = `<span class="tc-badge badge-tipo ${t.tipo === 'interno' ? 'interno' : ''}">${t.tipo === 'interno' ? 'Interno' : 'Cliente'}</span>`;
+      const selbTag = t.selb ? `<span class="concl-selb-badge">SELB ${esc(t.selb)}</span>` : '<span style="font-size:10px;color:var(--text3);">—</span>';
       return `<tr>
         <td class="hist-title">${esc(t.title)}</td>
         <td><strong>${esc(t._day)}</strong></td>
         <td>${esc(t.assignee||'—')}</td>
         <td>${tipoTag}</td>
         <td>${priTag}</td>
+        <td>${selbTag}</td>
         <td>${t.date ? `<span class="tc-badge badge-date">${t.date}</span>` : '—'}${isOverdue(t) ? ' <span class="tc-badge badge-overdue">ATRASADA</span>' : ''}</td>
         <td style="font-family:var(--mono);">${calcDays(t)||0}d</td>
       </tr>`;
@@ -2151,7 +2153,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     if (t.done) {
       const now = new Date();
       t.doneAt = now.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'}) + ' ' + now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-      history.push({id:t.id,title:t.title,assignee:t.assignee||'',day,date:t.date,dateRaw:t.dateRaw,doneAt:t.doneAt,qty:t.qty||0,tipo:t.tipo||'cliente',urgent:t.urgent,priority:t.priority});
+      history.push({id:t.id,title:t.title,assignee:t.assignee||'',day,date:t.date,dateRaw:t.dateRaw,doneAt:t.doneAt,qty:t.qty||0,tipo:t.tipo||'cliente',urgent:t.urgent,priority:t.priority,selb:t.selb||''});
     } else {
       history = history.filter(h => h.id !== t.id);
       t.doneAt = null;
@@ -2730,10 +2732,11 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     doc.rect(margin, y, W-margin*2, 7, 'F');
     doc.setTextColor(40,40,80);
     doc.text('Tarefa', margin+2, y+5);
-    doc.text('Dia', margin+95, y+5);
-    doc.text('Responsavel', margin+118, y+5);
-    doc.text('Prazo', margin+152, y+5);
-    doc.text('Prioridade', margin+170, y+5);
+    doc.text('Dia', margin+88, y+5);
+    doc.text('Responsavel', margin+110, y+5);
+    doc.text('SELB', margin+142, y+5);
+    doc.text('Prazo', margin+157, y+5);
+    doc.text('Prioridade', margin+173, y+5);
     y += 8;
 
     let all = [];
@@ -2748,17 +2751,24 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
       doc.setFont('helvetica', t.urgent ? 'bold' : 'normal');
       doc.setFontSize(8);
       doc.setTextColor(t.urgent ? 200 : 30, t.urgent ? 30 : 30, t.urgent ? 30 : 50);
-      let tit = sanitizePDF(t.title); if (doc.getTextWidth(tit) > 85) { while(doc.getTextWidth(tit+'...')>85 && tit.length>3) tit=tit.slice(0,-1); tit+='...'; }
+      let tit = sanitizePDF(t.title); if (doc.getTextWidth(tit) > 80) { while(doc.getTextWidth(tit+'...')>80 && tit.length>3) tit=tit.slice(0,-1); tit+='...'; }
       doc.text(tit, margin+2, y+5.5);
       doc.setFont('helvetica','normal'); doc.setTextColor(80,80,100);
-      doc.text(sanitizePDF(t._day), margin+95, y+5.5);
-      doc.text(sanitizePDF(t.assignee||'—'), margin+118, y+5.5);
-      doc.text(t.date||'—', margin+152, y+5.5);
+      doc.text(sanitizePDF(t._day), margin+88, y+5.5);
+      doc.text(sanitizePDF(t.assignee||'—'), margin+110, y+5.5);
+      if (t.selb) {
+        doc.setTextColor(91,91,214); doc.setFont('helvetica','bold');
+        doc.text(sanitizePDF(t.selb), margin+142, y+5.5);
+        doc.setFont('helvetica','normal'); doc.setTextColor(80,80,100);
+      } else {
+        doc.text('—', margin+142, y+5.5);
+      }
+      doc.text(t.date||'—', margin+157, y+5.5);
       const priColor = t.urgent ? [240,76,93] : t.priority ? [245,158,11] : [107,114,128];
       doc.setFillColor(...priColor);
-      doc.roundedRect(margin+170, y+2, 26, 4, 1, 1, 'F');
+      doc.roundedRect(margin+173, y+2, 26, 4, 1, 1, 'F');
       doc.setTextColor(255,255,255); doc.setFontSize(6.5);
-      doc.text(t.urgent ? 'URGENTE' : t.priority ? 'PRIORIDADE' : 'NORMAL', margin+183, y+5.2, {align:'center'});
+      doc.text(t.urgent ? 'URGENTE' : t.priority ? 'PRIORIDADE' : 'NORMAL', margin+186, y+5.2, {align:'center'});
       y += 9;
     });
 
@@ -2770,18 +2780,34 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
       doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(9);
       doc.text(`Historico Concluidas (${history.length})`, margin+3, y+5.5);
       y += 10;
+      // Header row for history
+      doc.setFillColor(210,240,230);
+      doc.rect(margin, y, W-margin*2, 6, 'F');
+      doc.setTextColor(20,80,50); doc.setFont('helvetica','bold'); doc.setFontSize(7);
+      doc.text('Tarefa', margin+3, y+4.5);
+      doc.text('Responsavel', margin+92, y+4.5);
+      doc.text('SELB', margin+130, y+4.5);
+      doc.text('Concluida em', margin+150, y+4.5);
+      y += 7;
       history.slice(-20).reverse().forEach((h,idx) => {
         if (y > 275) { doc.addPage(); y = 15; }
         const isEven = idx % 2 === 0;
         doc.setFillColor(isEven ? 245 : 250, isEven ? 252 : 255, isEven ? 248 : 252);
         doc.rect(margin, y, W-margin*2, 7, 'F');
         doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(30,80,60);
-        let ht = sanitizePDF(h.title); if (doc.getTextWidth(ht) > 90) { while(doc.getTextWidth(ht+'...')>90&&ht.length>3) ht=ht.slice(0,-1); ht+='...'; }
+        let ht = sanitizePDF(h.title); if (doc.getTextWidth(ht) > 80) { while(doc.getTextWidth(ht+'...')>80&&ht.length>3) ht=ht.slice(0,-1); ht+='...'; }
         doc.text(ht, margin+3, y+5);
         doc.setTextColor(80,100,90);
-        doc.text(sanitizePDF(h.assignee||'—'), margin+100, y+5);
+        doc.text(sanitizePDF(h.assignee||'—'), margin+92, y+5);
+        if (h.selb) {
+          doc.setTextColor(91,91,214); doc.setFont('helvetica','bold');
+          doc.text(sanitizePDF(h.selb), margin+130, y+5);
+          doc.setFont('helvetica','normal'); doc.setTextColor(80,100,90);
+        } else {
+          doc.text('—', margin+130, y+5);
+        }
         doc.setTextColor(20,130,80);
-        doc.text(h.doneAt||'—', margin+145, y+5);
+        doc.text(h.doneAt||'—', margin+150, y+5);
         y += 8;
       });
     }
