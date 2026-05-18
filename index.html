@@ -586,7 +586,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     <button class="nav-btn" id="nav-concluidos" onclick="showSection('concluidos')">✅ Concluídos <span class="nav-badge green" id="nav-badge-concluidos" style="display:none">0</span></button>
     <button class="nav-btn" id="nav-cliente" onclick="showSection('cliente')">👤 Cliente</button>
     <button class="nav-btn" id="nav-interno" onclick="showSection('interno')">🏠 Uso Interno</button>
-    <button class="nav-btn" id="nav-itens" onclick="showSection('itens')">🛒 Solicitação de Itens</button>
+    <button class="nav-btn" id="nav-itens" onclick="showSection('itens')">🛒 Solicitação de Itens <span class="nav-badge" id="nav-badge-itens" style="display:none;background:#3B82F6;">0</span></button>
     <button class="nav-btn" id="nav-relatorios" onclick="showSection('relatorios')">📄 Relatórios</button>
     <button class="nav-btn" id="nav-semrevisao" onclick="showSection('semrevisao')">🚫 Sem Revisão <span class="nav-badge" id="nav-badge-semrevisao" style="display:none;background:#8B5CF6;">0</span></button>
     <button class="nav-btn" id="nav-techboard" onclick="showSection('techboard')">⚙️ TechBoard</button>
@@ -1228,6 +1228,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     const bAguard = document.getElementById('nav-badge-aguardando');
     if (!window.aguardando) window.aguardando = [];
     if (window.aguardando.length > 0) { bAguard.style.display = ''; bAguard.textContent = window.aguardando.length; } else bAguard.style.display = 'none';
+    const bItens = document.getElementById('nav-badge-itens');
+    const pendItens = (items||[]).filter(i => (i.status||'pendente') === 'pendente').length;
+    if (pendItens > 0) { bItens.style.display = ''; bItens.textContent = pendItens; } else bItens.style.display = 'none';
   }
 
   // ===== DASHBOARD =====
@@ -1697,7 +1700,13 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
       </div>
       <div class="cards-grid">
         ${trash.map(t => `<div class="concluded-card" style="opacity:.5;filter:grayscale(55%);border:1px dashed var(--border2);">
-          <div class="oc-title" style="color:var(--text3);margin-bottom:6px;">🗑 ${esc(t.title)}</div>
+          <div class="oc-top" style="flex-direction:column;align-items:flex-start;gap:5px;">
+            <div class="oc-title" style="color:var(--text3);">🗑 ${esc(t.title)}</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+              ${t.order ? `<span style="font-family:var(--mono);font-size:10px;font-weight:800;color:var(--accent2);background:var(--accent-dim);border:1px solid rgba(91,91,214,0.25);border-radius:5px;padding:1px 7px;">📦 ${esc(t.order)}</span>` : ''}
+              ${t.selb ? `<span class="concl-selb-badge">SELB ${esc(t.selb)}</span>` : ''}
+            </div>
+          </div>
           <div class="oc-badges"><span class="tc-badge" style="background:var(--surface3);color:var(--text3);">EXCLUÍDO</span></div>
           <div class="oc-meta">
             ${t.client?`<div class="oc-field">🏢 <span>${esc(t.client)}</span></div>`:''}
@@ -1926,6 +1935,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 
     // Update dashboard badge
     document.getElementById('d-items').textContent = pending.length;
+    // Update nav badge
+    const bItens = document.getElementById('nav-badge-itens');
+    if (bItens) { if (pending.length > 0) { bItens.style.display = ''; bItens.textContent = pending.length; } else bItens.style.display = 'none'; }
   };
 
   // ===== RELATÓRIOS =====
@@ -1985,12 +1997,12 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   // ===== ITEM ACTIONS =====
   window.changeItemStatus = function(id, status) {
     const item = (items||[]).find(i => i.id === id);
-    if (item) { item.status = status; persistTasks(); renderItems(); }
+    if (item) { item.status = status; persistTasks(); renderItems(); updateNavBadges(); }
   };
   window.deleteItem = function(id) {
     if (!confirm('Excluir este item?')) return;
     items = (items||[]).filter(i => i.id !== id);
-    persistTasks(); renderItems();
+    persistTasks(); renderItems(); updateNavBadges();
   };
 
   // ===== TASK ACTIONS =====
@@ -2497,6 +2509,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     document.getElementById('item-modal').style.display = 'none';
     if (currentSection === 'itens') renderItems();
     updateTopbar();
+    updateNavBadges();
   };
 
   // ===== CLEAR =====
