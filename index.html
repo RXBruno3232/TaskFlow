@@ -531,6 +531,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .tv-card-meta b{color:#8E90A8;}
 .tv-card-day{font-size:10px;font-weight:800;padding:2px 9px;border-radius:5px;background:rgba(255,255,255,0.05);color:#4E5068;border:1px solid rgba(255,255,255,0.07);display:inline-block;margin-bottom:9px;}
 .tv-empty{text-align:center;padding:40px 16px;color:#4E5068;font-size:14px;font-weight:700;}
+  .qual-approve-btn { color: #10b981 !important; border-color: rgba(16,185,129,0.4) !important; font-weight: 900 !important; }
+  .qual-approve-btn:hover { background: rgba(16,185,129,0.1) !important; }
 </style>
 </head>
 <body>
@@ -591,6 +593,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     <button class="nav-btn" id="nav-semrevisao" onclick="showSection('semrevisao')">🚫 Sem Revisão <span class="nav-badge" id="nav-badge-semrevisao" style="display:none;background:#8B5CF6;">0</span></button>
     <button class="nav-btn" id="nav-techboard" onclick="showSection('techboard')">⚙️ TechBoard</button>
     <button class="nav-btn" id="nav-aguardando" onclick="showSection('aguardando')">⏳ Aguardando Intervenção <span class="nav-badge" id="nav-badge-aguardando" style="display:none;background:#F59E0B;color:#1a1a1a;">0</span></button>
+    <button class="nav-btn" id="nav-qualidade" onclick="showSection('qualidade')">🔍 Qualidade <span class="nav-badge" id="nav-badge-qualidade" style="display:none;background:#10B981;">0</span></button>
   </div>
 
   <!-- FILTER BAR -->
@@ -771,6 +774,22 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
       <div class="section-title">⏳ Aguardando Intervenção</div>
     </div>
     <div class="cards-grid" id="aguardando-grid"></div>
+  </div>
+
+  <!-- QUALIDADE -->
+  <div id="view-qualidade" style="display:none">
+    <div class="section-header">
+      <div class="section-title">🔍 Controle de Qualidade</div>
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+        <input type="text" class="f-select" id="filter-qual-search" placeholder="🔍 Buscar..." oninput="renderQualidade()" style="min-width:160px;"/>
+        <select class="f-select" id="filter-qual-status" onchange="renderQualidade()">
+          <option value="">Todos</option>
+          <option value="pendente">⏳ Pendente aprovação</option>
+          <option value="aprovado">✅ Aprovados</option>
+        </select>
+      </div>
+    </div>
+    <div class="cards-grid" id="qualidade-grid"></div>
   </div>
 
   <!-- SEM REVISÃO -->
@@ -1071,6 +1090,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
           deletedConcluidos = data.deletedConcluidos || [];
           pendencias = data.pendencias || [];
           window.aguardando = data.aguardando || [];
+          window.qualidadeAprovados = data.qualidadeAprovados || {};
         } else {
           DAYS.forEach(d => { tasks[d] = []; });
           history = []; items = []; semRevisao = [];
@@ -1081,7 +1101,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     } else {
       try {
         const saved = localStorage.getItem('tf_v3');
-        if (saved) { const p = JSON.parse(saved); tasks = p.tasks || {}; history = p.history || []; items = p.items || []; semRevisao = p.semRevisao || []; deletedConcluidos = p.deletedConcluidos || []; pendencias = p.pendencias || []; window.aguardando = p.aguardando || []; }
+        if (saved) { const p = JSON.parse(saved); tasks = p.tasks || {}; history = p.history || []; items = p.items || []; semRevisao = p.semRevisao || []; deletedConcluidos = p.deletedConcluidos || []; pendencias = p.pendencias || []; window.aguardando = p.aguardando || []; window.qualidadeAprovados = p.qualidadeAprovados || {}; }
       } catch(e) {}
       DAYS.forEach(d => { if (!tasks[d]) tasks[d] = []; });
       render();
@@ -1089,7 +1109,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   }
 
   function persistTasks() {
-    const payload = { tasks, history, items, semRevisao, deletedConcluidos, pendencias, aguardando: window.aguardando || [] };
+    const payload = { tasks, history, items, semRevisao, deletedConcluidos, pendencias, aguardando: window.aguardando || [], qualidadeAprovados: window.qualidadeAprovados || {} };
     if (firebaseOk && db) {
       set(ref(db, 'tasks_v3'), payload).then(() => showSync('✓ Sincronizado'));
     } else {
@@ -1107,7 +1127,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   // ===== SECTIONS =====
   window.showSection = function(section) {
     currentSection = section;
-    const views = ['dashboard','tasks','pedidos','concluidos','cliente','interno','itens','relatorios','semrevisao','techboard','aguardando'];
+    const views = ['dashboard','tasks','pedidos','concluidos','cliente','interno','itens','relatorios','semrevisao','techboard','aguardando','qualidade'];
     views.forEach(v => {
       document.getElementById('view-' + v).style.display = v === section ? '' : 'none';
       document.getElementById('nav-' + v).classList.toggle('active', v === section);
@@ -1167,6 +1187,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     else if (s === 'semrevisao') renderSemRevisao();
     else if (s === 'techboard') { renderTechBoard(); updatePendBadge(); }
     else if (s === 'aguardando') renderAguardando();
+    else if (s === 'qualidade') renderQualidade();
   }
 
   function updateTopbar() {
@@ -1216,7 +1237,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
         else { open++; if (isOverdue(t)) late++; }
       });
     });
-    concl += history.length;
     const bTasks = document.getElementById('nav-badge-tasks');
     if (open > 0) { bTasks.style.display = ''; bTasks.textContent = open; } else bTasks.style.display = 'none';
     const bPed = document.getElementById('nav-badge-pedidos');
@@ -1231,6 +1251,16 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     const bItens = document.getElementById('nav-badge-itens');
     const pendItens = (items||[]).filter(i => (i.status||'pendente') === 'pendente').length;
     if (pendItens > 0) { bItens.style.display = ''; bItens.textContent = pendItens; } else bItens.style.display = 'none';
+    // Qualidade badge — pendentes de aprovação
+    const bQual = document.getElementById('nav-badge-qualidade');
+    if (bQual) {
+      const qualAprov = window.qualidadeAprovados || {};
+      let allConcl = [];
+      DAYS.forEach(d => { (tasks[d]||[]).forEach(t => { if (t.done) allConcl.push(t); }); });
+      allConcl = allConcl.concat(history||[]);
+      const pendQual = allConcl.filter(t => !qualAprov[t.id]).length;
+      if (pendQual > 0) { bQual.style.display = ''; bQual.textContent = pendQual; } else bQual.style.display = 'none';
+    }
   }
 
   // ===== DASHBOARD =====
@@ -1671,7 +1701,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
               ${selbTag}
             </div>
           </div>
-          <div class="oc-badges"><span class="tc-badge badge-done">CONCLUÍDA</span>${tipoTag}${t.date ? `<span class="tc-badge badge-date">${t.date}</span>` : ''}</div>
+          <div class="oc-badges"><span class="tc-badge badge-done">CONCLUÍDA</span>${tipoTag}${t.date ? `<span class="tc-badge badge-date">${t.date}</span>` : ''}${(() => { const qa = window.qualidadeAprovados || {}; return qa[t.id] ? `<span style="display:inline-flex;align-items:center;gap:3px;background:linear-gradient(135deg,#064e3b,#065f46);color:#6ee7b7;border:1px solid #10b981;border-radius:6px;font-size:10px;font-weight:900;padding:2px 8px;letter-spacing:.04em;">✅ APROVADO QUALIDADE</span>` : ''; })()}</div>
           <div class="oc-meta">
             ${t.assignee ? `<div class="oc-field">👤 Responsável <span style="color:var(--text);font-weight:800;">${esc(t.assignee)}</span></div>` : ''}
             ${t.order ? `<div class="oc-field">🔢 Pedido <span style="font-family:var(--mono);color:var(--accent2);">${esc(t.order)}</span></div>` : ''}
@@ -3346,6 +3376,104 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
       });
     });
   }
+
+  // ===== QUALIDADE =====
+  window.renderQualidade = function() {
+    if (!window.qualidadeAprovados) window.qualidadeAprovados = {};
+    const qa = window.qualidadeAprovados;
+    const search = (document.getElementById('filter-qual-search')||{}).value || '';
+    const statusF = (document.getElementById('filter-qual-status')||{}).value || '';
+
+    // Gather all concluded tasks
+    let all = [];
+    DAYS.forEach(d => {
+      (tasks[d]||[]).forEach(t => {
+        if (t.done) all.push({ ...t, _day: d });
+      });
+    });
+    (history||[]).forEach(h => {
+      if (!all.find(t => t.id === h.id)) all.push({ ...h });
+    });
+
+    // Filter
+    if (search) {
+      const q = search.toLowerCase();
+      all = all.filter(t =>
+        (t.title||'').toLowerCase().includes(q) ||
+        (t.order||'').toLowerCase().includes(q) ||
+        (t.client||'').toLowerCase().includes(q) ||
+        (t.selb||'').toLowerCase().includes(q)
+      );
+    }
+    if (statusF === 'pendente') all = all.filter(t => !qa[t.id]);
+    else if (statusF === 'aprovado') all = all.filter(t => !!qa[t.id]);
+
+    const grid = document.getElementById('qualidade-grid');
+    if (!grid) return;
+
+    if (all.length === 0) {
+      grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:48px 20px;color:var(--text3);font-size:13px;">Nenhum pedido concluído encontrado.</div>`;
+      return;
+    }
+
+    grid.innerHTML = all.map(t => {
+      const aprovado = !!qa[t.id];
+      const selbBadge = t.selb ? `<span class="concl-selb-badge">SELB ${esc(t.selb)}</span>` : '';
+      const statusBadge = aprovado
+        ? `<span style="display:inline-flex;align-items:center;gap:4px;background:linear-gradient(135deg,#064e3b,#065f46);color:#6ee7b7;border:1px solid #10b981;border-radius:6px;font-size:10px;font-weight:900;padding:2px 9px;letter-spacing:.04em;">✅ APROVADO QUALIDADE</span>`
+        : `<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(245,158,11,0.12);color:#fbbf24;border:1px solid rgba(245,158,11,0.35);border-radius:6px;font-size:10px;font-weight:800;padding:2px 9px;letter-spacing:.04em;">⏳ AGUARDANDO APROVAÇÃO</span>`;
+      const tipoTag = `<span class="tc-badge badge-tipo ${(t.tipo||'') === 'interno' ? 'interno' : ''}">${(t.tipo||'') === 'interno' ? '🏠 Interno' : '👤 Cliente'}</span>`;
+
+      return `<div class="concluded-card" style="${aprovado ? 'border-color:rgba(16,185,129,0.3);' : ''}">
+        <div class="oc-top" style="flex-direction:column;align-items:flex-start;gap:6px;">
+          <div style="display:flex;align-items:center;gap:8px;width:100%;flex-wrap:wrap;">
+            <div class="oc-title" style="flex:1;">✓ ${esc(t.title)}</div>
+            ${selbBadge}
+          </div>
+          ${statusBadge}
+        </div>
+        <div class="oc-badges"><span class="tc-badge badge-done">CONCLUÍDA</span>${tipoTag}${t.date ? `<span class="tc-badge badge-date">${t.date}</span>` : ''}</div>
+        <div class="oc-meta">
+          ${t.assignee ? `<div class="oc-field">👤 Responsável <span style="font-weight:800;color:var(--text);">${esc(t.assignee)}</span></div>` : ''}
+          ${t.order ? `<div class="oc-field">🔢 Pedido <span style="font-family:var(--mono);color:var(--accent2);">${esc(t.order)}</span></div>` : ''}
+          ${t.client ? `<div class="oc-field">🏢 Cliente <span>${esc(t.client)}</span></div>` : ''}
+          ${t.equipment ? `<div class="oc-field">💻 Equipamento <span>${esc(t.equipment)}</span></div>` : ''}
+          ${t.doneAt ? `<div class="oc-field" style="color:var(--success)">✅ Concluída <span style="color:var(--success);">${t.doneAt}</span></div>` : ''}
+          ${aprovado && qa[t.id].by ? `<div class="oc-field" style="color:#10b981;">🔍 Aprovado por <span style="color:#10b981;font-weight:800;">${esc(qa[t.id].by)}</span> em ${esc(qa[t.id].at)}</div>` : ''}
+        </div>
+        <div class="oc-actions">
+          ${!aprovado
+            ? `<button class="tc-act qual-approve-btn" onclick="aprovarQualidade('${t.id}')">🔍 Aprovação Qualidade</button>`
+            : `<button class="tc-act" style="color:var(--text3);cursor:default;opacity:.6;" disabled>✅ Já aprovado</button>`
+          }
+          ${aprovado ? `<button class="tc-act del-act" onclick="removerAprovacaoQualidade('${t.id}')">↩ Remover aprovação</button>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+  };
+
+  window.aprovarQualidade = function(id) {
+    if (!window.qualidadeAprovados) window.qualidadeAprovados = {};
+    const agora = new Date().toLocaleString('pt-BR');
+    // Pedir nome de quem aprova
+    const nome = prompt('Nome de quem está aprovando a qualidade (opcional):') || '';
+    window.qualidadeAprovados[id] = { at: agora, by: nome };
+    persistTasks();
+    renderQualidade();
+    // Atualizar selo nos concluídos se estiver na mesma aba
+    if (currentSection === 'concluidos') { renderConcluidos(); renderHistory(); }
+    updateNavBadges();
+    showSync('✓ Qualidade aprovada');
+  };
+
+  window.removerAprovacaoQualidade = function(id) {
+    if (!confirm('Remover a aprovação de qualidade deste pedido?')) return;
+    if (window.qualidadeAprovados) delete window.qualidadeAprovados[id];
+    persistTasks();
+    renderQualidade();
+    if (currentSection === 'concluidos') { renderConcluidos(); renderHistory(); }
+    updateNavBadges();
+  };
 
   // ===== INIT =====
   showSection('dashboard');
