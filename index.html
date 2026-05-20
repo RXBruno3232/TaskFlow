@@ -594,6 +594,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     <button class="nav-btn" id="nav-techboard" onclick="showSection('techboard')">⚙️ TechBoard</button>
     <button class="nav-btn" id="nav-aguardando" onclick="showSection('aguardando')">⏳ Aguardando Intervenção <span class="nav-badge" id="nav-badge-aguardando" style="display:none;background:#F59E0B;color:#1a1a1a;">0</span></button>
     <button class="nav-btn" id="nav-qualidade" onclick="showSection('qualidade')">🔍 Qualidade <span class="nav-badge" id="nav-badge-qualidade" style="display:none;background:#10B981;">0</span></button>
+    <button class="nav-btn" id="nav-urgencias" onclick="showSection('urgencias')">🚨 Urgências <span class="nav-badge" id="nav-badge-urgencias" style="display:none;background:#F04C5D;">0</span></button>
   </div>
 
   <!-- FILTER BAR -->
@@ -654,6 +655,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     </div>
     <div class="dash-section-title">Responsáveis — visão atual</div>
     <div class="assignee-summary" id="assignee-summary"></div>
+    <div class="dash-section-title" style="margin-top:18px;">Pendências por Tecnologia</div>
+    <div id="tech-category-summary" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-top:8px;"></div>
   </div>
 
   <!-- TAREFAS (Trello) -->
@@ -798,6 +801,22 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
       <div class="section-title">🚫 Sem Condição de Revisão</div>
     </div>
     <div class="cards-grid" id="semrevisao-grid"></div>
+  </div>
+
+  <!-- URGÊNCIAS -->
+  <div id="view-urgencias" style="display:none">
+    <div class="section-header">
+      <div class="section-title">🚨 Urgências</div>
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+        <input type="text" class="f-select" id="filter-urg-search" placeholder="🔍 Buscar..." oninput="renderUrgencias()" style="min-width:160px;"/>
+        <select class="f-select" id="filter-urg-tipo" onchange="renderUrgencias()">
+          <option value="">Todos</option>
+          <option value="cliente">👤 Cliente</option>
+          <option value="interno">🏠 Interno</option>
+        </select>
+      </div>
+    </div>
+    <div class="cards-grid" id="urgencias-grid"></div>
   </div>
 
   <!-- RELATÓRIOS -->
@@ -1127,7 +1146,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   // ===== SECTIONS =====
   window.showSection = function(section) {
     currentSection = section;
-    const views = ['dashboard','tasks','pedidos','concluidos','cliente','interno','itens','relatorios','semrevisao','techboard','aguardando','qualidade'];
+    const views = ['dashboard','tasks','pedidos','concluidos','cliente','interno','itens','relatorios','semrevisao','techboard','aguardando','qualidade','urgencias'];
     views.forEach(v => {
       document.getElementById('view-' + v).style.display = v === section ? '' : 'none';
       document.getElementById('nav-' + v).classList.toggle('active', v === section);
@@ -1176,7 +1195,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     updateAlerts();
     updateNavBadges();
     const s = currentSection;
-    if (s === 'dashboard') renderDashboard();
+    if (s === 'dashboard') { renderDashboard(); renderTechCategories(); }
     else if (s === 'tasks') renderTrelloBoard();
     else if (s === 'pedidos') renderPedidos();
     else if (s === 'concluidos') { renderConcluidos(); renderHistory(); }
@@ -1188,6 +1207,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     else if (s === 'techboard') { renderTechBoard(); updatePendBadge(); }
     else if (s === 'aguardando') renderAguardando();
     else if (s === 'qualidade') renderQualidade();
+    else if (s === 'urgencias') renderUrgencias();
   }
 
   function updateTopbar() {
@@ -1255,11 +1275,17 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     const bQual = document.getElementById('nav-badge-qualidade');
     if (bQual) {
       const qualAprov = window.qualidadeAprovados || {};
-      let allConcl = [];
-      DAYS.forEach(d => { (tasks[d]||[]).forEach(t => { if (t.done) allConcl.push(t); }); });
-      allConcl = allConcl.concat(history||[]);
-      const pendQual = allConcl.filter(t => !qualAprov[t.id]).length;
+      let pendQual = 0;
+      DAYS.forEach(d => { (tasks[d]||[]).forEach(t => { if (t.done && !qualAprov[t.id]) pendQual++; }); });
+      (history||[]).forEach(h => { if (!qualAprov[h.id]) { let found = false; DAYS.forEach(d => { if ((tasks[d]||[]).find(t => t.id === h.id)) found = true; }); if (!found) pendQual++; } });
       if (pendQual > 0) { bQual.style.display = ''; bQual.textContent = pendQual; } else bQual.style.display = 'none';
+    }
+    // Urgências badge
+    const bUrg = document.getElementById('nav-badge-urgencias');
+    if (bUrg) {
+      let urgCount = 0;
+      DAYS.forEach(d => { (tasks[d]||[]).forEach(t => { if (!t.done && t.urgent) urgCount++; }); });
+      if (urgCount > 0) { bUrg.style.display = ''; bUrg.textContent = urgCount; } else bUrg.style.display = 'none';
     }
   }
 
@@ -3378,24 +3404,24 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   }
 
   // ===== QUALIDADE =====
+  // A aba Qualidade mostra APENAS pedidos concluídos ainda NÃO aprovados.
+  // Após aprovação, o card some daqui e aparece com selo em Concluídos.
   window.renderQualidade = function() {
     if (!window.qualidadeAprovados) window.qualidadeAprovados = {};
     const qa = window.qualidadeAprovados;
     const search = (document.getElementById('filter-qual-search')||{}).value || '';
-    const statusF = (document.getElementById('filter-qual-status')||{}).value || '';
 
-    // Gather all concluded tasks
+    // Gather all concluded tasks that are NOT yet approved
     let all = [];
     DAYS.forEach(d => {
       (tasks[d]||[]).forEach(t => {
-        if (t.done) all.push({ ...t, _day: d });
+        if (t.done && !qa[t.id]) all.push({ ...t, _day: d });
       });
     });
     (history||[]).forEach(h => {
-      if (!all.find(t => t.id === h.id)) all.push({ ...h });
+      if (!all.find(t => t.id === h.id) && !qa[h.id]) all.push({ ...h });
     });
 
-    // Filter
     if (search) {
       const q = search.toLowerCase();
       all = all.filter(t =>
@@ -3405,32 +3431,26 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
         (t.selb||'').toLowerCase().includes(q)
       );
     }
-    if (statusF === 'pendente') all = all.filter(t => !qa[t.id]);
-    else if (statusF === 'aprovado') all = all.filter(t => !!qa[t.id]);
 
     const grid = document.getElementById('qualidade-grid');
     if (!grid) return;
 
     if (all.length === 0) {
-      grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:48px 20px;color:var(--text3);font-size:13px;">Nenhum pedido concluído encontrado.</div>`;
+      grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--text3);font-size:14px;">✅ Nenhum pedido aguardando aprovação de qualidade.</div>`;
+      updateNavBadges();
       return;
     }
 
     grid.innerHTML = all.map(t => {
-      const aprovado = !!qa[t.id];
       const selbBadge = t.selb ? `<span class="concl-selb-badge">SELB ${esc(t.selb)}</span>` : '';
-      const statusBadge = aprovado
-        ? `<span style="display:inline-flex;align-items:center;gap:4px;background:linear-gradient(135deg,#064e3b,#065f46);color:#6ee7b7;border:1px solid #10b981;border-radius:6px;font-size:10px;font-weight:900;padding:2px 9px;letter-spacing:.04em;">✅ APROVADO QUALIDADE</span>`
-        : `<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(245,158,11,0.12);color:#fbbf24;border:1px solid rgba(245,158,11,0.35);border-radius:6px;font-size:10px;font-weight:800;padding:2px 9px;letter-spacing:.04em;">⏳ AGUARDANDO APROVAÇÃO</span>`;
       const tipoTag = `<span class="tc-badge badge-tipo ${(t.tipo||'') === 'interno' ? 'interno' : ''}">${(t.tipo||'') === 'interno' ? '🏠 Interno' : '👤 Cliente'}</span>`;
-
-      return `<div class="concluded-card" style="${aprovado ? 'border-color:rgba(16,185,129,0.3);' : ''}">
+      return `<div class="concluded-card" style="border-left:3px solid #F59E0B;">
         <div class="oc-top" style="flex-direction:column;align-items:flex-start;gap:6px;">
           <div style="display:flex;align-items:center;gap:8px;width:100%;flex-wrap:wrap;">
             <div class="oc-title" style="flex:1;">✓ ${esc(t.title)}</div>
             ${selbBadge}
           </div>
-          ${statusBadge}
+          <span style="display:inline-flex;align-items:center;gap:4px;background:rgba(245,158,11,0.12);color:#fbbf24;border:1px solid rgba(245,158,11,0.35);border-radius:6px;font-size:10px;font-weight:800;padding:2px 9px;letter-spacing:.04em;">⏳ AGUARDANDO APROVAÇÃO</span>
         </div>
         <div class="oc-badges"><span class="tc-badge badge-done">CONCLUÍDA</span>${tipoTag}${t.date ? `<span class="tc-badge badge-date">${t.date}</span>` : ''}</div>
         <div class="oc-meta">
@@ -3439,40 +3459,193 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
           ${t.client ? `<div class="oc-field">🏢 Cliente <span>${esc(t.client)}</span></div>` : ''}
           ${t.equipment ? `<div class="oc-field">💻 Equipamento <span>${esc(t.equipment)}</span></div>` : ''}
           ${t.doneAt ? `<div class="oc-field" style="color:var(--success)">✅ Concluída <span style="color:var(--success);">${t.doneAt}</span></div>` : ''}
-          ${aprovado && qa[t.id].by ? `<div class="oc-field" style="color:#10b981;">🔍 Aprovado por <span style="color:#10b981;font-weight:800;">${esc(qa[t.id].by)}</span> em ${esc(qa[t.id].at)}</div>` : ''}
         </div>
         <div class="oc-actions">
-          ${!aprovado
-            ? `<button class="tc-act qual-approve-btn" onclick="aprovarQualidade('${t.id}')">🔍 Aprovação Qualidade</button>`
-            : `<button class="tc-act" style="color:var(--text3);cursor:default;opacity:.6;" disabled>✅ Já aprovado</button>`
-          }
-          ${aprovado ? `<button class="tc-act del-act" onclick="removerAprovacaoQualidade('${t.id}')">↩ Remover aprovação</button>` : ''}
+          <button class="tc-act qual-approve-btn" onclick="aprovarQualidade('${t.id}')">🔍 Aprovação Qualidade</button>
+          <button class="tc-act del-act" onclick="excluirQualidade('${t.id}','${t._day||''}')">🗑 Excluir</button>
         </div>
       </div>`;
     }).join('');
+    updateNavBadges();
   };
 
   window.aprovarQualidade = function(id) {
     if (!window.qualidadeAprovados) window.qualidadeAprovados = {};
     const agora = new Date().toLocaleString('pt-BR');
-    // Pedir nome de quem aprova
     const nome = prompt('Nome de quem está aprovando a qualidade (opcional):') || '';
     window.qualidadeAprovados[id] = { at: agora, by: nome };
     persistTasks();
-    renderQualidade();
-    // Atualizar selo nos concluídos se estiver na mesma aba
-    if (currentSection === 'concluidos') { renderConcluidos(); renderHistory(); }
+    renderQualidade(); // card some daqui
+    if (currentSection === 'concluidos') { renderConcluidos(); renderHistory(); } // aparece lá com selo
     updateNavBadges();
-    showSync('✓ Qualidade aprovada');
+    showSync('✅ Aprovado — card movido para Concluídos');
   };
 
   window.removerAprovacaoQualidade = function(id) {
-    if (!confirm('Remover a aprovação de qualidade deste pedido?')) return;
+    if (!confirm('Remover a aprovação de qualidade? O card voltará para a aba Qualidade.')) return;
     if (window.qualidadeAprovados) delete window.qualidadeAprovados[id];
     persistTasks();
     renderQualidade();
     if (currentSection === 'concluidos') { renderConcluidos(); renderHistory(); }
     updateNavBadges();
+  };
+
+  // ===== URGÊNCIAS =====
+  window.renderUrgencias = function() {
+    const grid = document.getElementById('urgencias-grid');
+    if (!grid) return;
+    const search = ((document.getElementById('filter-urg-search')||{}).value||'').toLowerCase();
+    const tipoF = (document.getElementById('filter-urg-tipo')||{}).value||'';
+
+    let all = [];
+    DAYS.forEach(d => {
+      (tasks[d]||[]).filter(t => !t.done && t.urgent).forEach(t => all.push({...t, _day: d}));
+    });
+    if (search) all = all.filter(t =>
+      (t.title||'').toLowerCase().includes(search) ||
+      (t.client||'').toLowerCase().includes(search) ||
+      (t.order||'').toLowerCase().includes(search) ||
+      (t.equipment||'').toLowerCase().includes(search)
+    );
+    if (tipoF) all = all.filter(t => (t.tipo||'cliente') === tipoF);
+    all.sort((a,b) => calcDays(b) - calcDays(a));
+
+    if (all.length === 0) {
+      grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;padding:48px 0;"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Nenhuma tarefa urgente no momento</div>';
+      return;
+    }
+    grid.innerHTML = all.map(t => buildOrderCard(t, t._day)).join('');
+  };
+
+  window.excluirQualidade = function(id, day) {
+    if (!confirm('Excluir este card da fila de qualidade? O pedido será removido de Concluídos também.')) return;
+    // Remove da aprovação pendente
+    if (window.qualidadeAprovados) delete window.qualidadeAprovados[id];
+    // Remove do tasks (done)
+    if (day && tasks[day]) tasks[day] = tasks[day].filter(t => t.id !== id);
+    // Remove do history
+    history = (history||[]).filter(h => h.id !== id);
+    persistTasks();
+    renderQualidade();
+    if (currentSection === 'concluidos') { renderConcluidos(); renderHistory(); }
+    updateNavBadges();
+    showSync('🗑 Card excluído');
+  };
+
+  // ===== DASHBOARD — CATEGORIAS DE TECNOLOGIA =====
+  const TECH_CATS = [
+    { id: 'hw',  label: '🖥️ Hardware Corporativo',       color: '#3B82F6', dimColor: 'rgba(59,130,246,0.1)',  borderColor: 'rgba(59,130,246,0.3)',  keywords: ['notebook','desktop','cpu','servidor','computador','monitor','workstation'] },
+    { id: 'dt',  label: '📡 Dispositivos Tecnológicos',  color: '#8B5CF6', dimColor: 'rgba(139,92,246,0.1)', borderColor: 'rgba(139,92,246,0.3)', keywords: ['coletor','leitor','projetor','tv','rack'] },
+    { id: 'mob', label: '📱 Dispositivos Móveis',        color: '#F59E0B', dimColor: 'rgba(245,158,11,0.1)', borderColor: 'rgba(245,158,11,0.3)', keywords: ['celular','smartphone','tablet','iphone','smart'] },
+  ];
+
+  // Load custom labels from storage
+  function loadTechLabels() {
+    try {
+      const saved = localStorage.getItem('tf_tech_labels');
+      if (saved) {
+        const labels = JSON.parse(saved);
+        TECH_CATS.forEach(cat => { if (labels[cat.id]) cat.label = labels[cat.id]; });
+      }
+    } catch(e) {}
+  }
+  function saveTechLabels() {
+    const labels = {};
+    TECH_CATS.forEach(cat => { labels[cat.id] = cat.label; });
+    localStorage.setItem('tf_tech_labels', JSON.stringify(labels));
+  }
+  loadTechLabels();
+
+  window.editTechCatLabel = function(catId) {
+    const cat = TECH_CATS.find(c => c.id === catId);
+    if (!cat) return;
+    const novo = prompt('Novo nome para esta categoria:', cat.label);
+    if (novo === null) return; // cancelou
+    const trimmed = novo.trim();
+    if (!trimmed) return;
+    cat.label = trimmed;
+    saveTechLabels();
+    renderTechCategories();
+    showSync('✓ Nome atualizado');
+  };
+
+  function matchesCatKeywords(t, keywords) {
+    const fields = [(t.title||''),(t.equipment||''),(t.desc||'')].join(' ').toLowerCase();
+    return keywords.some(kw => fields.includes(kw));
+  }
+
+  function renderTechCategories() {
+    const el = document.getElementById('tech-category-summary');
+    if (!el) return;
+    let allOpen = [];
+    DAYS.forEach(d => { (tasks[d]||[]).filter(t => !t.done).forEach(t => allOpen.push({...t, _day: d})); });
+
+    el.innerHTML = TECH_CATS.map(cat => {
+      const matches = allOpen.filter(t => matchesCatKeywords(t, cat.keywords));
+      const count = matches.length;
+      return `<div style="background:${cat.dimColor};border:1px solid ${cat.borderColor};border-radius:14px;padding:16px 18px;display:flex;flex-direction:column;gap:6px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
+          <div style="font-size:11px;font-weight:800;color:${cat.color};text-transform:uppercase;letter-spacing:.05em;flex:1;">${cat.label}</div>
+          <button onclick="editTechCatLabel('${cat.id}')" title="Renomear categoria" style="background:none;border:1px solid ${cat.borderColor};border-radius:6px;color:${cat.color};font-size:10px;padding:2px 7px;cursor:pointer;opacity:.7;font-family:var(--font);font-weight:700;white-space:nowrap;transition:opacity .15s;" onmouseenter="this.style.opacity='1'" onmouseleave="this.style.opacity='.7'">✏️ Editar</button>
+        </div>
+        <div style="font-size:32px;font-weight:900;color:${cat.color};font-family:var(--mono);line-height:1.1;">${count}</div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">${count === 0 ? 'Nenhuma pendência' : count === 1 ? '1 pendência ativa' : `${count} pendências ativas`}</div>
+        ${count > 0 ? `<button onclick="openTechCatModal('${cat.id}')" style="align-self:flex-start;padding:5px 14px;border-radius:8px;border:1px solid ${cat.borderColor};background:${cat.dimColor};color:${cat.color};font-family:var(--font);font-size:11px;font-weight:800;cursor:pointer;transition:opacity .15s;" onmouseenter="this.style.opacity='.75'" onmouseleave="this.style.opacity='1'">👁 VER CARDS</button>` : ''}
+      </div>`;
+    }).join('');
+  }
+
+  window.openTechCatModal = function(catId) {
+    const cat = TECH_CATS.find(c => c.id === catId);
+    if (!cat) return;
+    let allOpen = [];
+    DAYS.forEach(d => { (tasks[d]||[]).filter(t => !t.done).forEach(t => allOpen.push({...t, _day: d})); });
+    const matches = allOpen.filter(t => matchesCatKeywords(t, cat.keywords));
+
+    let ov = document.getElementById('tech-cat-overlay');
+    if (!ov) {
+      ov = document.createElement('div');
+      ov.id = 'tech-cat-overlay';
+      ov.style.cssText = 'position:fixed;inset:0;z-index:2200;background:rgba(8,9,18,0.85);backdrop-filter:blur(14px);display:flex;align-items:flex-start;justify-content:center;padding:32px 16px;overflow-y:auto;';
+      ov.addEventListener('click', e => { if (e.target === ov) ov.style.display = 'none'; });
+      document.body.appendChild(ov);
+    }
+
+    const cardsHtml = matches.length === 0
+      ? `<div style="text-align:center;padding:32px;color:var(--text3);">Nenhum card encontrado.</div>`
+      : matches.map(t => {
+          const priTag = t.urgent ? '<span class="tc-badge badge-urgent">URGENTE</span>' : t.priority ? '<span class="tc-badge badge-priority">PRIORIDADE</span>' : '<span class="tc-badge badge-normal">NORMAL</span>';
+          const tipoTag = `<span class="tc-badge badge-tipo ${t.tipo === 'interno' ? 'interno' : ''}">${t.tipo === 'interno' ? '🏠 Interno' : '👤 Cliente'}</span>`;
+          const avCls = {JOÃO:'av-joao',GABRIEL:'av-gabriel',GUSTAVO:'av-gustavo',EXTERNO:'av-externo'};
+          const av = avCls[(t.assignee||'').toUpperCase()] || 'av-gen';
+          return `<div class="order-card" style="border-left:3px solid ${cat.color};">
+            <div class="oc-top">
+              <div class="oc-title">${esc(t.title)}</div>
+              ${t.assignee ? `<div style="display:flex;align-items:center;gap:4px;flex-shrink:0;"><div class="tc-av ${av}" style="width:20px;height:20px;font-size:8px;">${getInitials(t.assignee)}</div><span style="font-size:11px;font-weight:700;color:var(--text2);">${esc(t.assignee)}</span></div>` : ''}
+            </div>
+            <div class="oc-badges">${priTag}${tipoTag}${t.date ? `<span class="tc-badge badge-date">${t.date}</span>` : ''}</div>
+            <div class="oc-meta">
+              ${t.order ? `<div class="oc-field">🔢 Pedido <span style="font-family:var(--mono);color:var(--accent2);">${esc(t.order)}</span></div>` : ''}
+              ${t.client ? `<div class="oc-field">🏢 Cliente <span>${esc(t.client)}</span></div>` : ''}
+              ${t.equipment ? `<div class="oc-field">💻 Equipamento <span>${esc(t.equipment)}</span></div>` : ''}
+              ${t.selb ? `<div class="oc-field">🔖 SELB <span style="font-family:var(--mono);font-weight:800;">${esc(t.selb)}</span></div>` : ''}
+            </div>
+          </div>`;
+        }).join('');
+
+    ov.innerHTML = `<div style="background:var(--surface);border:1px solid var(--border2);border-radius:18px;width:100%;max-width:900px;box-shadow:0 24px 80px rgba(0,0,0,0.7);">
+      <div style="padding:20px 24px 16px;border-bottom:1px solid var(--border);background:var(--surface2);border-radius:18px 18px 0 0;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+        <div>
+          <div style="font-size:16px;font-weight:900;color:${cat.color};">${cat.label}</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px;">${matches.length} pedido${matches.length !== 1 ? 's' : ''} ativo${matches.length !== 1 ? 's' : ''} na aba Pedidos</div>
+        </div>
+        <button onclick="document.getElementById('tech-cat-overlay').style.display='none'" style="background:none;border:none;color:var(--text3);font-size:22px;cursor:pointer;line-height:1;padding:2px 6px;" onmouseenter="this.style.color='var(--text)'" onmouseleave="this.style.color='var(--text3)'">✕</button>
+      </div>
+      <div style="padding:18px 20px;">
+        <div class="cards-grid">${cardsHtml}</div>
+      </div>
+    </div>`;
+    ov.style.display = 'flex';
   };
 
   // ===== INIT =====
